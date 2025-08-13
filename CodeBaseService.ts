@@ -1,6 +1,6 @@
 import {Registry, Service} from "@token-ring/registry";
 import FileTreeResource from "./FileTreeResource.ts";
-import { FileSystemService } from "@token-ring/filesystem";
+import {FileSystemService} from "@token-ring/filesystem";
 import WholeFileResource from "./WholeFileResource.ts";
 
 export type MemoryItem = { role: string; content: string };

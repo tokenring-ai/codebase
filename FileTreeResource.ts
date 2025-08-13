@@ -1,4 +1,4 @@
-import { FileMatchResource } from "@token-ring/filesystem";
+import {FileMatchResource} from "@token-ring/filesystem";
 
 export interface FileTreeItem {
   path: string;
