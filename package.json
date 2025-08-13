@@ -2,7 +2,7 @@
 	"name": "@token-ring/codebase",
 	"version": "0.1.0",
 	"dependencies": {
-		"@token-ring/eslint-config": "0.0.0",
+
 		"@token-ring/filesystem": "0.1.0",
 		"@token-ring/registry": "0.1.0"
 	},
