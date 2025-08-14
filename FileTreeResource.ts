@@ -19,15 +19,14 @@ export default class FileTreeResource extends FileMatchResource {
   static constructorProperties = {
     items: {
       type: "array",
-      description: "Files to insert into the chat memory",
+      description: "Files to match",
       items: {
         type: "object",
         properties: {
           path: {
             type: "string",
             required: true,
-            description:
-              "Path to directory or file to insert into the chat memory",
+            description: "Path to directory to include",
           },
           ignore: {
             type: "string",
