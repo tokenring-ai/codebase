@@ -1,6 +1,6 @@
-export { default as FileTreeResource } from "./FileTreeResource.ts";
-export { default as WholeFileResource } from "./WholeFileResource.ts";
-export { default as CodeBaseService } from "./CodeBaseService.ts";
+export {default as FileTreeResource} from "./FileTreeResource.ts";
+export {default as WholeFileResource} from "./WholeFileResource.ts";
+export {default as CodeBaseService} from "./CodeBaseService.ts";
 
 export const name = "@token-ring/codebase";
 export const description = "Codebase resources and utilities";

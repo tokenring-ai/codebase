@@ -13,9 +13,6 @@ export interface WholeFileParams {
  * Class representing a resource that yields whole files.
  */
 export default class WholeFileResource extends FileMatchResource {
-  name = "FileTreeService";
-  description = "Provides FileTree functionality";
-
   static constructorProperties = {
     items: {
       type: "array",
@@ -37,6 +34,8 @@ export default class WholeFileResource extends FileMatchResource {
       },
     },
   } as const;
+  name = "FileTreeService";
+  description = "Provides FileTree functionality";
 
   constructor(params: WholeFileParams) {
     super(params as any);

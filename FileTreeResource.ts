@@ -13,9 +13,6 @@ export interface FileTreeParams {
  * Class representing a file tree context extending DirectoryService.
  */
 export default class FileTreeResource extends FileMatchResource {
-  name = "FileTreeService";
-  description = "Provides FileTree functionality";
-
   static constructorProperties = {
     items: {
       type: "array",
@@ -37,6 +34,8 @@ export default class FileTreeResource extends FileMatchResource {
       },
     },
   } as const;
+  name = "FileTreeService";
+  description = "Provides FileTree functionality";
 
   constructor(params: FileTreeParams) {
     // pass-through to base class which handles items
