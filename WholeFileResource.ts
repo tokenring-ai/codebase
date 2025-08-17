@@ -2,7 +2,7 @@ import {FileMatchResource} from "@token-ring/filesystem";
 
 export interface WholeFileItem {
   path: string;
-  ignore?: string;
+  include: RegExp;
 }
 
 export interface WholeFileParams {
@@ -13,31 +13,10 @@ export interface WholeFileParams {
  * Class representing a resource that yields whole files.
  */
 export default class WholeFileResource extends FileMatchResource {
-  static constructorProperties = {
-    items: {
-      type: "array",
-      description: "Files to match",
-      items: {
-        type: "object",
-        properties: {
-          path: {
-            type: "string",
-            required: true,
-            description: "Path to directory to include",
-          },
-          ignore: {
-            type: "string",
-            description:
-              "A .gitignore/node-glob ignore style list of files to ignore",
-          },
-        },
-      },
-    },
-  } as const;
-  name = "FileTreeService";
-  description = "Provides FileTree functionality";
+  name = "WholeFileResource";
+  description = "Provides whole files to include in the chat context";
 
   constructor(params: WholeFileParams) {
-    super(params as any);
+    super(params);
   }
 }

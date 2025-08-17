@@ -9,14 +9,14 @@ export default class CodeBaseService extends Service {
   /**
    * Asynchronously yields memories from file tree and whole files
    */
-  async* getMemories(registry: Registry): AsyncGenerator<MemoryItem> {
+async* getMemories(registry: Registry): AsyncGenerator<MemoryItem> {
     const fileTreeFiles = new Set<string>();
 
     const fileTreeResources = registry.resources.getResourcesByType(
       FileTreeResource
     ) as Array<InstanceType<typeof FileTreeResource>>;
     for (const resource of fileTreeResources) {
-      await (resource as any).addFilesToSet(fileTreeFiles, registry);
+      await resource.addFilesToSet(fileTreeFiles, registry);
     }
 
     if (fileTreeFiles.size > 0) {
@@ -34,16 +34,16 @@ export default class CodeBaseService extends Service {
       WholeFileResource
     ) as Array<InstanceType<typeof WholeFileResource>>;
     for (const resource of wholeFileResources) {
-      await (resource as any).addFilesToSet(wholeFiles, registry);
+      await resource.addFilesToSet(wholeFiles, registry);
 
-      for await (const file of (resource as any).getMatchedFiles(registry)) {
+      for await (const file of resource.getMatchedFiles(registry)) {
         wholeFiles.add(file as string);
       }
     }
 
     const fileSystem = registry.requireFirstServiceByType(
       FileSystemService
-    ) as any;
+    );
     for await (const file of wholeFiles) {
       const content = await fileSystem.getFile(file);
       yield {
