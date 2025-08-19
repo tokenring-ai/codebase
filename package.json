@@ -1,19 +1,17 @@
 {
-	"name": "@token-ring/codebase",
-	"version": "0.1.0",
-	"dependencies": {
-
-		"@token-ring/filesystem": "0.1.0",
-		"@token-ring/registry": "0.1.0"
-	},
-	"exports": {
-		".": "./index.ts",
-		"./*": "./*.ts"
-	},
-	"license": "MIT",
-	"scripts": {
-
-		"test": "node_modules/.bin/vitest run"
-	},
-	"type": "module"
+ "name": "@token-ring/codebase",
+ "version": "0.1.0",
+ "dependencies": {
+  "@token-ring/filesystem": "0.1.0",
+  "@token-ring/registry": "0.1.0"
+ },
+ "exports": {
+  ".": "./index.ts",
+  "./*": "./*.ts"
+ },
+ "license": "MIT",
+ "scripts": {
+  "test": "node_modules/.bin/vitest run"
+ },
+ "type": "module"
 }

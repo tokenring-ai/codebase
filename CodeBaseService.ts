@@ -1,15 +1,14 @@
 import {FileSystemService} from "@token-ring/filesystem";
 import {Registry, Service} from "@token-ring/registry";
+import {MemoryItemMessage} from "@token-ring/registry/Service";
 import FileTreeResource from "./FileTreeResource.ts";
 import WholeFileResource from "./WholeFileResource.ts";
-
-export type MemoryItem = { role: string; content: string };
 
 export default class CodeBaseService extends Service {
   /**
    * Asynchronously yields memories from file tree and whole files
    */
-async* getMemories(registry: Registry): AsyncGenerator<MemoryItem> {
+  async* getMemories(registry: Registry): AsyncGenerator<MemoryItemMessage> {
     const fileTreeFiles = new Set<string>();
 
     const fileTreeResources = registry.resources.getResourcesByType(
