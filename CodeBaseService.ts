@@ -1,54 +1,62 @@
 import {FileSystemService} from "@token-ring/filesystem";
+import FileMatchResource from "@token-ring/filesystem/FileMatchResource";
 import {Registry, Service} from "@token-ring/registry";
 import {MemoryItemMessage} from "@token-ring/registry/Service";
-import FileTreeResource from "./FileTreeResource.ts";
+import GenericMultipleRegistry from "@token-ring/utility/GenericMultipleRegistry";
 import WholeFileResource from "./WholeFileResource.ts";
 
 export default class CodeBaseService extends Service {
+  private resourceRegistry = new GenericMultipleRegistry<FileMatchResource>();
+
+  registerResource = this.resourceRegistry.register;
+  getActiveResourceNames = this.resourceRegistry.getActiveItemNames;
+  enableResources = this.resourceRegistry.enableItem;
+  getAvailableResources = this.resourceRegistry.getAllItemNames;
+
   /**
    * Asynchronously yields memories from file tree and whole files
    */
   async* getMemories(registry: Registry): AsyncGenerator<MemoryItemMessage> {
-    const fileTreeFiles = new Set<string>();
+    {
+      const fileTreeFiles = new Set<string>();
+      const resources = this.resourceRegistry.getActiveItemEntries();
+      for (const name in resources) {
+        const resource = resources[name];
 
-    const fileTreeResources = registry.resources.getResourcesByType(
-      FileTreeResource
-    ) as Array<InstanceType<typeof FileTreeResource>>;
-    for (const resource of fileTreeResources) {
-      await resource.addFilesToSet(fileTreeFiles, registry);
-    }
+        await resource.addFilesToSet(fileTreeFiles, registry);
+      }
 
-    if (fileTreeFiles.size > 0) {
-      yield {
-        role: "user",
-        content: `// Directory Tree of project files:\n${Array.from(fileTreeFiles)
-          .sort()
-          .join("\n")}`,
-      };
-    }
-
-    const wholeFiles = new Set<string>();
-
-    const wholeFileResources = registry.resources.getResourcesByType(
-      WholeFileResource
-    ) as Array<InstanceType<typeof WholeFileResource>>;
-    for (const resource of wholeFileResources) {
-      await resource.addFilesToSet(wholeFiles, registry);
-
-      for await (const file of resource.getMatchedFiles(registry)) {
-        wholeFiles.add(file as string);
+      if (fileTreeFiles.size > 0) {
+        yield {
+          role: "user",
+          content: `// Directory Tree of project files:\n${Array.from(fileTreeFiles)
+            .sort()
+            .join("\n")}`,
+        };
       }
     }
 
-    const fileSystem = registry.requireFirstServiceByType(
-      FileSystemService
-    );
-    for await (const file of wholeFiles) {
-      const content = await fileSystem.getFile(file);
-      yield {
-        role: "user",
-        content: `// Complete contents of file: ${file}\n${content}`,
-      };
+    {
+      const wholeFiles = new Set<string>();
+      const resources = this.resourceRegistry.getActiveItemEntries();
+      for (const name in resources) {
+        const resource = resources[name];
+
+        if (resource instanceof WholeFileResource) {
+          await resource.addFilesToSet(wholeFiles, registry);
+        }
+      }
+
+      const fileSystem = registry.requireFirstServiceByType(
+        FileSystemService
+      );
+      for await (const file of wholeFiles) {
+        const content = await fileSystem.getFile(file);
+        yield {
+          role: "user",
+          content: `// Complete contents of file: ${file}\n${content}`,
+        };
+      }
     }
   }
 }
