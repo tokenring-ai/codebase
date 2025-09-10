@@ -1,29 +1,31 @@
-import {FileSystemService} from "@token-ring/filesystem";
-import FileMatchResource from "@token-ring/filesystem/FileMatchResource";
-import {Registry, Service} from "@token-ring/registry";
-import {MemoryItemMessage} from "@token-ring/registry/Service";
-import GenericMultipleRegistry from "@token-ring/utility/GenericMultipleRegistry";
+import {Agent} from "@tokenring-ai/agent";
+import {MemoryItemMessage, TokenRingService} from "@tokenring-ai/agent/types";
+import {FileSystemService} from "@tokenring-ai/filesystem";
+import FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
+import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/KeyedRegistryWithMultipleSelection";
 import WholeFileResource from "./WholeFileResource.ts";
 
-export default class CodeBaseService extends Service {
-  private resourceRegistry = new GenericMultipleRegistry<FileMatchResource>();
+export default class CodeBaseService implements TokenRingService {
+  name = "CodeBaseService";
+  description = "Manages codebase resources for providing file content and directory structure to AI context, allowing selective inclusion of project files and directories.";
+  private resourceRegistry = new KeyedRegistryWithMultipleSelection<FileMatchResource>();
 
   registerResource = this.resourceRegistry.register;
   getActiveResourceNames = this.resourceRegistry.getActiveItemNames;
-  enableResources = this.resourceRegistry.enableItem;
+  enableResources = this.resourceRegistry.enableItems;
   getAvailableResources = this.resourceRegistry.getAllItemNames;
 
   /**
    * Asynchronously yields memories from file tree and whole files
    */
-  async* getMemories(registry: Registry): AsyncGenerator<MemoryItemMessage> {
+  async* getMemories(agent: Agent): AsyncGenerator<MemoryItemMessage> {
     {
       const fileTreeFiles = new Set<string>();
       const resources = this.resourceRegistry.getActiveItemEntries();
       for (const name in resources) {
         const resource = resources[name];
 
-        await resource.addFilesToSet(fileTreeFiles, registry);
+        await resource.addFilesToSet(fileTreeFiles, agent);
       }
 
       if (fileTreeFiles.size > 0) {
@@ -43,11 +45,11 @@ export default class CodeBaseService extends Service {
         const resource = resources[name];
 
         if (resource instanceof WholeFileResource) {
-          await resource.addFilesToSet(wholeFiles, registry);
+          await resource.addFilesToSet(wholeFiles, agent);
         }
       }
 
-      const fileSystem = registry.requireFirstServiceByType(
+      const fileSystem = agent.requireFirstServiceByType(
         FileSystemService
       );
       for await (const file of wholeFiles) {

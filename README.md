@@ -1,4 +1,4 @@
-# @token-ring/codebase
+# @tokenring-ai/codebase
 
 Codebase resources and utilities for Token Ring agents. This package helps an agent build contextual "memories" from the
 repository by:
@@ -16,13 +16,13 @@ It does this via three main exports:
 
 This package is part of the Token Ring monorepo. In a workspace it is referenced as:
 
-- Name: `@token-ring/codebase`
+- Name: `@tokenring-ai/codebase`
 - Version: `0.1.0`
 
 Ensure the following peer packages are available in your workspace:
 
-- `@token-ring/registry`
-- `@token-ring/filesystem`
+- `@tokenring-ai/registry`
+- `@tokenring-ai/filesystem`
 
 ## Exports
 
@@ -31,12 +31,12 @@ import {
   FileTreeResource,
   WholeFileResource,
   CodeBaseService,
-} from "@token-ring/codebase";
+} from "@tokenring-ai/codebase";
 ```
 
 ## Concepts
 
-- Resources: FileTreeResource and WholeFileResource extend `FileMatchResource` from `@token-ring/filesystem`. They
+- Resources: FileTreeResource and WholeFileResource extend `FileMatchResource` from `@tokenring-ai/filesystem`. They
   accept an `items` array where each item has:
 - `path`: string. Directory or file path to include.
 - `ignore` (optional): string. A .gitignore/node-glob style ignore list.
@@ -54,13 +54,13 @@ a formatted string.
 Below is a minimal example showing how to register resources and stream memories.
 
 ```ts
-import { ServiceRegistry } from "@token-ring/registry";
-import { FileSystemService } from "@token-ring/filesystem";
+import {ServiceRegistry} from "@tokenring-ai/registry";
+import {FileSystemService} from "@tokenring-ai/filesystem";
 import {
   FileTreeResource,
   WholeFileResource,
   CodeBaseService,
-} from "@token-ring/codebase";
+} from "@tokenring-ai/codebase";
 
 // 1) Create the registry and required services
 const registry = new ServiceRegistry();
@@ -70,8 +70,8 @@ registry.registerService(new FileSystemService());
 registry.resources.register(
   new FileTreeResource({
     items: [
-      { path: "src" },               // include a directory tree
-      { path: "package.json" },      // and a single file
+      {path: "src"},               // include a directory tree
+      {path: "package.json"},      // and a single file
       // ignore patterns are supported, e.g. ignore: "**/*.test.*\nnode_modules/**"
     ],
   })
@@ -80,8 +80,8 @@ registry.resources.register(
 registry.resources.register(
   new WholeFileResource({
     items: [
-      { path: "README.md" },         // include entire files
-      { path: "src/index.ts" },
+      {path: "README.md"},         // include entire files
+      {path: "src/index.ts"},
     ],
   })
 );
@@ -123,7 +123,7 @@ for await (const memory of codebase.getMemories(registry)) {
 
 ## Notes
 
-- File matching and ignore behavior are provided by `@token-ring/filesystem`'s `FileMatchResource`.
+- File matching and ignore behavior are provided by `@tokenring-ai/filesystem`'s `FileMatchResource`.
 - Ensure you register a `FileSystemService` in the `ServiceRegistry`; it is required to read files.
 - This package uses ES modules and TypeScript source files are exported directly in the workspace setup.
 

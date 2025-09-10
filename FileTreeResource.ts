@@ -1,4 +1,4 @@
-import {FileMatchResource} from "@token-ring/filesystem";
+import {FileMatchResource} from "@tokenring-ai/filesystem";
 
 /**
  * Class representing a file tree context extending DirectoryService.

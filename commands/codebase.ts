@@ -1,5 +1,5 @@
-import {ChatService, HumanInterfaceService} from "@token-ring/chat";
-import {Registry} from "@token-ring/registry";
+import {Agent} from "@tokenring-ai/agent";
+import joinDefault from "@tokenring-ai/utility/joinDefault";
 import CodeBaseService from "../CodeBaseService.js";
 
 /**
@@ -15,17 +15,13 @@ export const description =
 
 export async function execute(
   remainder: string | undefined,
-  registry: Registry,
+  agent: Agent,
 ): Promise<void> {
-  const chatService = registry.requireFirstServiceByType(ChatService);
-  const humanInterfaceService = registry.getFirstServiceByType(
-    HumanInterfaceService,
-  );
-  const codeBaseService = registry.requireFirstServiceByType(CodeBaseService);
+  const codeBaseService = agent.requireFirstServiceByType(CodeBaseService);
 
 
-  const availableResources: string[] = codeBaseService.getAvailableResources();
-  const activeResources: string[] = Array.from(codeBaseService.getActiveResourceNames());
+  const availableResources = codeBaseService.getAvailableResources();
+  const activeResources = codeBaseService.getActiveResourceNames();
 
   // Handle direct resource operations, e.g. /codebaseResources enable foo bar
   const directOperation = remainder?.trim();
@@ -35,7 +31,7 @@ export async function execute(
     const resourceNames = parts.slice(1);
 
     if (!["enable", "set"].includes(operation)) {
-      chatService.errorLine(
+      agent.errorLine(
         "Unknown operation. Usage: /codebaseResources [enable|set] <resource1> <resource2> ...",
       );
       return;
@@ -44,7 +40,7 @@ export async function execute(
     // Validate resource names
     for (const name of resourceNames) {
       if (!availableResources.includes(name)) {
-        chatService.errorLine(`Unknown codebase resource: ${name}`);
+        agent.errorLine(`Unknown codebase resource: ${name}`);
         return;
       }
     }
@@ -53,19 +49,19 @@ export async function execute(
       case "enable": {
         let changed = false;
         for (const name of resourceNames) {
-          if (activeResources.includes(name)) {
-            chatService.systemLine(`Codebase resource '${name}' is already enabled.`);
+          if (activeResources.has(name)) {
+            agent.infoLine(`Codebase resource '${name}' is already enabled.`);
           } else {
             try {
               codeBaseService.enableResources(name);
               changed = true;
-              chatService.systemLine(`Enabled codebase resource: ${name}`);
+              agent.infoLine(`Enabled codebase resource: ${name}`);
             } catch (error) {
-              chatService.errorLine(`Failed to enable codebase resource '${name}': ${error}`);
+              agent.errorLine(`Failed to enable codebase resource '${name}': ${error}`);
             }
           }
         }
-        if (!changed) chatService.systemLine("No codebase resources were enabled.");
+        if (!changed) agent.infoLine("No codebase resources were enabled.");
         break;
       }
       case "set": {
@@ -73,38 +69,31 @@ export async function execute(
         try {
           // Since CodeBaseService doesn't have a clear method, we'll need to work around this
           // For now, we'll enable the new resources (they will be added to the active set)
-          codeBaseService.enableResources(...resourceNames);
+          codeBaseService.enableResources(resourceNames);
 
-          chatService.systemLine("Set codebase resources to: " + resourceNames.join(", "));
-          chatService.systemLine("Note: Previous resources are still active. CodeBaseService needs a clear/reset method for full 'set' functionality.");
+          agent.infoLine("Set codebase resources to: " + resourceNames.join(", "));
+          agent.infoLine("Note: Previous resources are still active. CodeBaseService needs a clear/reset method for full 'set' functionality.");
         } catch (error) {
-          chatService.errorLine(`Failed to set codebase resources: ${error}`);
+          agent.errorLine(`Failed to set codebase resources: ${error}`);
         }
         break;
       }
     }
 
-    chatService.systemLine(
-      "Current enabled codebase resources: " +
-      (Array.from(codeBaseService.getActiveResourceNames()).join(" ") || "none"),
+    agent.infoLine(
+      `Current enabled codebase resources: ${joinDefault(", ", codeBaseService.getActiveResourceNames(), "(none)")}`,
     );
     return;
   }
 
-  // If no remainder provided, show interactive multi-selection
-  if (!humanInterfaceService) {
-    chatService.systemLine("Available codebase resources: " + availableResources.join(", "));
-    chatService.systemLine("Currently enabled: " + (activeResources.join(", ") || "none"));
-    chatService.systemLine("Use: /codebaseResources enable <resource1> <resource2> ... to enable resources");
-    return;
-  }
 
   const sortedResources = availableResources.sort((a, b) => a.localeCompare(b));
 
   // Interactive multi-selection if no operation is provided in the command
   try {
-    const selectedResources = await humanInterfaceService.askForMultipleTreeSelection({
-      message: `Current enabled codebase resources: ${activeResources.join(", ") || "none"}. Choose codebase resources to enable:`,
+    const selectedResources: string[] | undefined = await agent.askHuman({
+      type: "askForMultipleTreeSelection",
+      message: `Current enabled codebase resources: ${joinDefault(", ", activeResources, "(none)")}. Choose codebase resources to enable:`,
       tree: {
         name: "Codebase Resource Selection",
         children: buildResourceTree(sortedResources),
@@ -115,29 +104,29 @@ export async function execute(
     if (selectedResources && selectedResources.length > 0) {
       try {
         // Enable all selected resources
-        const resourcesToEnable = selectedResources.filter(r => !activeResources.includes(r));
+        const resourcesToEnable = selectedResources.filter(r => !activeResources.has(r));
 
         if (resourcesToEnable.length > 0) {
-          codeBaseService.enableResources(...resourcesToEnable);
-          chatService.systemLine(`Enabled codebase resources: ${resourcesToEnable.join(", ")}`);
+          codeBaseService.enableResources(resourcesToEnable);
+          agent.infoLine(`Enabled codebase resources: ${resourcesToEnable.join(", ")}`);
         } else {
-          chatService.systemLine("All selected resources were already enabled.");
+          agent.infoLine("All selected resources were already enabled.");
         }
 
-        chatService.systemLine(
+        agent.infoLine(
           "Current enabled codebase resources: " +
           Array.from(codeBaseService.getActiveResourceNames()).join(", ")
         );
       } catch (error) {
-        chatService.errorLine(`Error enabling codebase resources: ${error}`);
+        agent.errorLine(`Error enabling codebase resources: ${error}`);
       }
     } else if (selectedResources && selectedResources.length === 0) {
-      chatService.systemLine("No resources selected. Current state unchanged.");
+      agent.infoLine("No resources selected. Current state unchanged.");
     } else {
-      chatService.systemLine("Codebase resource selection cancelled. No changes made.");
+      agent.infoLine("Codebase resource selection cancelled. No changes made.");
     }
   } catch (error) {
-    chatService.errorLine(`Error during codebase resource selection:`, error);
+    agent.errorLine(`Error during codebase resource selection:`, error as Error);
   }
 }
 

@@ -1,9 +1,9 @@
 {
- "name": "@token-ring/codebase",
+ "name": "@tokenring-ai/codebase",
+ "description": "Codebase service",
  "version": "0.1.0",
  "dependencies": {
-  "@token-ring/filesystem": "0.1.0",
-  "@token-ring/registry": "0.1.0"
+  "@tokenring-ai/filesystem": "0.1.0"
  },
  "exports": {
   ".": "./index.ts",
