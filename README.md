@@ -1,132 +1,191 @@
-# @tokenring-ai/codebase
+# Codebase Package Documentation
 
-Codebase resources and utilities for Token Ring agents. This package helps an agent build contextual "memories" from the
-repository by:
+## Overview
 
-- Emitting a directory tree of selected files and folders.
-- Emitting the complete contents of selected files.
+The `@tokenring-ai/codebase` package provides a service for managing codebase resources in TokenRing AI agents. Its primary purpose is to selectively include project files and directory structures into the AI's context through memory messages. This enables AI agents to reason about and interact with the codebase by providing file trees and full file contents as needed.
 
-It does this via three main exports:
+The package integrates with the TokenRing AI framework, leveraging the `FileSystemService` to access files and a registry system to manage active resources. Key features include:
+- Generating a directory tree of relevant files.
+- Including full contents of specified files in the AI context.
+- Chat commands for interactively enabling/disabling resources.
 
-- FileTreeResource: declares directories/files to be summarized as a tree.
-- WholeFileResource: declares files to be read in full.
-- CodeBaseService: streams chat-ready memory messages based on the above resources and the FileSystemService.
+This service is particularly useful for AI-driven code analysis, editing, or generation tasks within a project.
 
-## Installation
+## Installation/Setup
 
-This package is part of the Token Ring monorepo. In a workspace it is referenced as:
+This package is designed for use within the TokenRing AI ecosystem. To install:
 
-- Name: `@tokenring-ai/codebase`
-- Version: `0.1.0`
+1. Ensure you have Node.js (ES2022+ support) installed.
+2. Install via npm (assuming it's published; otherwise, link locally):
 
-Ensure the following peer packages are available in your workspace:
+   ```
+   npm install @tokenring-ai/codebase
+   ```
 
-- `@tokenring-ai/registry`
-- `@tokenring-ai/filesystem`
+3. Dependencies are managed via `package.json`. Key dependency: `@tokenring-ai/filesystem@0.1.0`.
 
-## Exports
+4. Build the package if needed (TypeScript compilation):
 
-```ts
-import {
-  FileTreeResource,
-  WholeFileResource,
-  CodeBaseService,
-} from "@tokenring-ai/codebase";
-```
+   ```
+   npx tsc
+   ```
 
-## Concepts
+   Output goes to `dist-ts/`. Use `type: "module"` in `package.json` for ES modules.
 
-- Resources: FileTreeResource and WholeFileResource extend `FileMatchResource` from `@tokenring-ai/filesystem`. They
-  accept an `items` array where each item has:
-- `path`: string. Directory or file path to include.
-- `ignore` (optional): string. A .gitignore/node-glob style ignore list.
+5. Integrate into a TokenRing agent by importing and registering the `CodeBaseService`.
 
-- CodeBaseService: A Service that yields chat "memories" by asking the registry for resources and reading files from
-  `FileSystemService`.
-- First yields a single message with the project directory tree (if `FileTreeResource` matched any files).
-- Then yields one message per fully included file (from `WholeFileResource`).
+## Package Structure
 
-Each yielded item has the shape `{ role: string; content: string }` where `role` is typically `"user"` and `content` is
-a formatted string.
+The package follows a simple structure:
 
-## Usage
+- `index.ts`: Main entry point, exports core classes (`CodeBaseService`, `FileTreeResource`, `WholeFileResource`) and package info with chat commands.
+- `CodeBaseService.ts`: Core service implementation for managing resources and generating memories.
+- `FileTreeResource.ts`: Resource for providing directory tree functionality (extends `FileMatchResource`).
+- `WholeFileResource.ts`: Resource for including full file contents (extends `FileMatchResource`).
+- `chatCommands.ts`: Exports chat commands for resource management.
+- `commands/codebase.ts`: Implementation of the `/codebaseResources` chat command.
+- `package.json`: Package metadata, dependencies, and exports.
+- `tsconfig.json`: TypeScript configuration for compilation.
+- `README.md`: This documentation file.
+- `LICENSE`: MIT license.
 
-Below is a minimal example showing how to register resources and stream memories.
+## Core Components
 
-```ts
-import {ServiceRegistry} from "@tokenring-ai/registry";
-import {FileSystemService} from "@tokenring-ai/filesystem";
-import {
-  FileTreeResource,
-  WholeFileResource,
-  CodeBaseService,
-} from "@tokenring-ai/codebase";
+### CodeBaseService
 
-// 1) Create the registry and required services
-const registry = new ServiceRegistry();
-registry.registerService(new FileSystemService());
+The main service class implementing `TokenRingService`. It manages a registry of `FileMatchResource` instances and generates async memories for the AI agent.
 
-// 2) Register resources describing which files to include
-registry.resources.register(
-  new FileTreeResource({
-    items: [
-      {path: "src"},               // include a directory tree
-      {path: "package.json"},      // and a single file
-      // ignore patterns are supported, e.g. ignore: "**/*.test.*\nnode_modules/**"
-    ],
-  })
-);
+- **Description**: Registers, enables, and uses resources to build file trees and yield full file contents. Resources determine which files are included in the AI context.
+- **Key Methods**:
+  - `registerResource(resource: FileMatchResource)`: Registers a new resource (proxied from registry).
+  - `getActiveResourceNames()`: Returns `Set<string>` of currently active resource names.
+  - `enableResources(...names: string[])`: Enables specified resources.
+  - `getAvailableResources()`: Returns `string[]` of all registered resource names.
+  - `async* getMemories(agent: Agent): AsyncGenerator<MemoryItemMessage>`: Yields two types of memories:
+    1. A user message with the sorted directory tree of files from active resources (if any).
+    2. User messages with full contents of files from `WholeFileResource` instances, prefixed with file paths.
 
-registry.resources.register(
-  new WholeFileResource({
-    items: [
-      {path: "README.md"},         // include entire files
-      {path: "src/index.ts"},
-    ],
-  })
-);
+- **Interactions**: Relies on `FileSystemService` for file content retrieval. Resources like `FileTreeResource` and `WholeFileResource` populate sets of files, which are then processed.
 
-// 3) Use CodeBaseService to stream chat-ready memories
-const codebase = new CodeBaseService();
-for await (const memory of codebase.getMemories(registry)) {
-  // memory.role === "user"
-  // memory.content contains either the directory tree or the full file content
-  console.log(memory);
+Example (in an agent setup):
+```typescript
+import { CodeBaseService } from '@tokenring-ai/codebase';
+import { FileTreeResource, WholeFileResource } from '@tokenring-ai/codebase';
+
+const service = new CodeBaseService();
+service.registerResource(new FileTreeResource());
+service.registerResource(new WholeFileResource());
+
+service.enableResources('FileTreeResource'); // Enable tree generation
+
+// In agent loop:
+for await (const memory of service.getMemories(agent)) {
+  // Use memory in context
 }
 ```
 
-### What gets emitted?
+### FileTreeResource
 
-- Directory tree message (only if at least one file matched by FileTreeResource):
-- A single message starting with:
-  `// Directory Tree of project files:`
-- Followed by the matched paths, sorted, one per line.
+- **Description**: Extends `FileMatchResource` to provide file tree (directory structure) for context.
+- **Key Properties**:
+  - `name: "FileTreeService"`
+  - `description: "Provides FileTree functionality"`
+- **Usage**: When enabled, contributes to the file tree memory by adding file paths to a set.
 
-- Whole file messages:
-- One message per file, each starting with:
-  `// Complete contents of file: <path>`
-- Followed by the file's content as retrieved from `FileSystemService`.
+### WholeFileResource
 
-## API Summary
+- **Description**: Extends `FileMatchResource` to include full file contents in context.
+- **Key Properties**:
+  - `name: "WholeFileResource"`
+  - `description: "Provides whole files to include in the chat context"`
+- **Usage**: When enabled and active, adds files to a set, then `getMemories` fetches and yields their full contents via `FileSystemService`.
 
-- FileTreeResource
-- Constructor: `new FileTreeResource({ items: { path: string; ignore?: string }[] })`
-- Purpose: Gather a set of files/dirs and emit a directory tree summary.
+### Chat Commands
 
-- WholeFileResource
-- Constructor: `new WholeFileResource({ items: { path: string; ignore?: string }[] })`
-- Purpose: Gather a set of files and emit their full contents.
+- **Description**: Provides interactive management of codebase resources via `/codebaseResources`.
+- **Key Functionality** (in `commands/codebase.ts`):
+  - No args: Interactive multi-selection tree for enabling resources.
+  - `enable <resource1> <resource2> ...`: Enables specified resources.
+  - `set <resource1> <resource2> ...`: Attempts to set active resources (note: limited, as it doesn't clear existing; appends).
+  - Validates resources and provides feedback via agent lines (info/error).
+  - Builds a tree structure for selection based on resource name segments.
 
-- CodeBaseService
-- Method: `async *getMemories(registry: Registry): AsyncGenerator<{ role: string; content: string }>`
-- Purpose: Stream chat-ready messages based on the above resources and the file system.
+Example command usage (in chat):
+```
+/codebaseResources enable FileTreeResource WholeFileResource
+```
 
-## Notes
+## Usage Examples
 
-- File matching and ignore behavior are provided by `@tokenring-ai/filesystem`'s `FileMatchResource`.
-- Ensure you register a `FileSystemService` in the `ServiceRegistry`; it is required to read files.
-- This package uses ES modules and TypeScript source files are exported directly in the workspace setup.
+1. **Basic Setup and Memory Generation**:
+   ```typescript
+   import { Agent } from '@tokenring-ai/agent';
+   import { CodeBaseService, FileTreeResource } from '@tokenring-ai/codebase';
 
-## License
+   const agent = new Agent(/* config */);
+   const codebaseService = new CodeBaseService();
+   const treeResource = new FileTreeResource();
+   codebaseService.registerResource(treeResource);
+   codebaseService.enableResources('FileTreeService');
 
-MIT
+   // Generate memories
+   for await (const memory of codebaseService.getMemories(agent)) {
+     console.log(memory.content); // Outputs file tree or file contents
+   }
+   ```
+
+2. **Interactive Resource Management**:
+   In the agent's chat interface, use `/codebaseResources` to select resources via a tree UI, then query the agent about the codebase.
+
+3. **Full Integration in Agent**:
+   Register the service in the agent's services array. Chat commands are auto-available via `packageInfo.chatCommands`.
+
+## Configuration Options
+
+- **Resource Registration**: Manually register `FileMatchResource` subclasses before enabling.
+- **Enabling Resources**: Use chat command or `enableResources()` method. Resources must be registered first.
+- **No Environment Variables**: Configuration is runtime via API or chat.
+- **Customization**: Extend `FileMatchResource` for custom file matching logic (e.g., globs, filters).
+
+Note: The `set` operation in chat command doesn't clear existing resources; it enables additional ones. A `disableAll` or `clear` method could be added for full control.
+
+## API Reference
+
+- **CodeBaseService**:
+  - `constructor()`
+  - `registerResource(resource: FileMatchResource): void`
+  - `enableResources(...names: string[]): void`
+  - `getActiveResourceNames(): Set<string>`
+  - `getAvailableResources(): string[]`
+  - `async* getMemories(agent: Agent): AsyncGenerator<MemoryItemMessage>`
+
+- **FileTreeResource**:
+  - `extends FileMatchResource`
+  - Used for tree generation in `getMemories`.
+
+- **WholeFileResource**:
+  - `extends FileMatchResource`
+  - Triggers full file content inclusion.
+
+- **Chat Command**: `/codebaseResources [enable|set] <resources...>` – See `help()` for details.
+
+## Dependencies
+
+- `@tokenring-ai/agent`: For `Agent`, `TokenRingService`, `MemoryItemMessage`.
+- `@tokenring-ai/filesystem`: For `FileSystemService`, `FileMatchResource`.
+- `@tokenring-ai/utility`: For `KeyedRegistryWithMultipleSelection`, `joinDefault`.
+- Internal: TypeScript, Node.js modules.
+
+Dev dependencies (inferred): `vitest` for testing, TypeScript compiler.
+
+## Contributing/Notes
+
+- **Testing**: Run `npm test` using Vitest.
+- **Building**: Use `tsc` for compilation; outputs to `dist-ts`.
+- **Known Limitations**:
+  - `set` command doesn't reset active resources; consider adding a `disableAll` method.
+  - Resources assume access to `FileSystemService`; ensure it's registered in the agent.
+  - Binary files or non-UTF-8 may not be handled (focus on text files).
+  - No built-in file filtering beyond resource logic; extend `FileMatchResource` as needed.
+
+For contributions, follow TypeScript best practices, add tests, and update this README. License: MIT (see LICENSE file).
