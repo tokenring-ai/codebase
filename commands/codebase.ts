@@ -1,145 +1,174 @@
 import {Agent} from "@tokenring-ai/agent";
 import joinDefault from "@tokenring-ai/utility/joinDefault";
 import CodeBaseService from "../CodeBaseService.js";
+import RepoMapResource from "../RepoMapResource.js";
 
 /**
- * Usage:
- *   /codebaseResources [enable|set] <resource1> <resource2> ...
- *   /codebaseResources                     - shows interactive resource selection
- *   /codebaseResources enable foo bar      - enables foo and bar codebase resources
- *   /codebaseResources set a b c           - sets enabled codebase resources to a, b, c
+ * /codebase [action] [resources...] - Manage codebase resources in the chat session
+ *
+ * Actions:
+ * - select: Interactive resource selection
+ * - enable [resources...]: Enable resources
+ * - disable [resources...]: Disable resources  
+ * - list: List all resources currently enabled
+ * - clear: Remove all resources from the chat session
+ * - repo-map: Show the repository map
  */
 
-export const description =
-  "/codebaseResources [enable|set] <resource1> <resource2> ... - List, enable, or set enabled codebase resources." as const;
+export const description: string =
+  "/codebase [action] [resources...] - Manage codebase resources (select, enable, disable, list, clear, repo-map).";
 
-export async function execute(
-  remainder: string | undefined,
+async function selectResources(
+  codebaseService: CodeBaseService,
   agent: Agent,
-): Promise<void> {
-  const codeBaseService = agent.requireFirstServiceByType(CodeBaseService);
-
-
-  const availableResources = codeBaseService.getAvailableResources();
-  const activeResources = codeBaseService.getActiveResourceNames();
-
-  // Handle direct resource operations, e.g. /codebaseResources enable foo bar
-  const directOperation = remainder?.trim();
-  if (directOperation) {
-    const parts = directOperation.split(/\s+/);
-    const operation = parts[0];
-    const resourceNames = parts.slice(1);
-
-    if (!["enable", "set"].includes(operation)) {
-      agent.errorLine(
-        "Unknown operation. Usage: /codebaseResources [enable|set] <resource1> <resource2> ...",
-      );
-      return;
-    }
-
-    // Validate resource names
-    for (const name of resourceNames) {
-      if (!availableResources.includes(name)) {
-        agent.errorLine(`Unknown codebase resource: ${name}`);
-        return;
-      }
-    }
-
-    switch (operation) {
-      case "enable": {
-        let changed = false;
-        for (const name of resourceNames) {
-          if (activeResources.has(name)) {
-            agent.infoLine(`Codebase resource '${name}' is already enabled.`);
-          } else {
-            try {
-              codeBaseService.enableResources(name);
-              changed = true;
-              agent.infoLine(`Enabled codebase resource: ${name}`);
-            } catch (error) {
-              agent.errorLine(`Failed to enable codebase resource '${name}': ${error}`);
-            }
-          }
-        }
-        if (!changed) agent.infoLine("No codebase resources were enabled.");
-        break;
-      }
-      case "set": {
-        // Clear all active resources first, then enable the specified ones
-        try {
-          // Since CodeBaseService doesn't have a clear method, we'll need to work around this
-          // For now, we'll enable the new resources (they will be added to the active set)
-          codeBaseService.enableResources(resourceNames);
-
-          agent.infoLine("Set codebase resources to: " + resourceNames.join(", "));
-          agent.infoLine("Note: Previous resources are still active. CodeBaseService needs a clear/reset method for full 'set' functionality.");
-        } catch (error) {
-          agent.errorLine(`Failed to set codebase resources: ${error}`);
-        }
-        break;
-      }
-    }
-
-    agent.infoLine(
-      `Current enabled codebase resources: ${joinDefault(", ", codeBaseService.getActiveResourceNames(), "(none)")}`,
-    );
-    return;
-  }
-
-
+) {
+  const availableResources = codebaseService.getAvailableResources();
+  const activeResources = codebaseService.getActiveResourceNames();
   const sortedResources = availableResources.sort((a, b) => a.localeCompare(b));
 
-  // Interactive multi-selection if no operation is provided in the command
-  try {
-    const selectedResources: string[] | undefined = await agent.askHuman({
-      type: "askForMultipleTreeSelection",
-      message: `Current enabled codebase resources: ${joinDefault(", ", activeResources, "(none)")}. Choose codebase resources to enable:`,
-      tree: {
-        name: "Codebase Resource Selection",
-        children: buildResourceTree(sortedResources),
-      },
-      initialSelection: activeResources,
-    });
+  const selectedResources: string[] | undefined = await agent.askHuman({
+    type: "askForMultipleTreeSelection",
+    message: `Current enabled codebase resources: ${joinDefault(", ", activeResources, "(none)")}. Choose codebase resources to enable:`,
+    tree: {
+      name: "Codebase Resource Selection",
+      children: buildResourceTree(sortedResources),
+    },
+    initialSelection: activeResources,
+  });
 
-    if (selectedResources && selectedResources.length > 0) {
-      try {
-        // Enable all selected resources
-        const resourcesToEnable = selectedResources.filter(r => !activeResources.has(r));
-
-        if (resourcesToEnable.length > 0) {
-          codeBaseService.enableResources(resourcesToEnable);
-          agent.infoLine(`Enabled codebase resources: ${resourcesToEnable.join(", ")}`);
-        } else {
-          agent.infoLine("All selected resources were already enabled.");
-        }
-
-        agent.infoLine(
-          "Current enabled codebase resources: " +
-          Array.from(codeBaseService.getActiveResourceNames()).join(", ")
-        );
-      } catch (error) {
-        agent.errorLine(`Error enabling codebase resources: ${error}`);
-      }
-    } else if (selectedResources && selectedResources.length === 0) {
-      agent.infoLine("No resources selected. Current state unchanged.");
+  if (selectedResources && selectedResources.length > 0) {
+    const resourcesToEnable = selectedResources.filter(r => !activeResources.has(r));
+    if (resourcesToEnable.length > 0) {
+      codebaseService.enableResources(resourcesToEnable);
+      agent.infoLine(`Enabled codebase resources: ${resourcesToEnable.join(", ")}`);
     } else {
-      agent.infoLine("Codebase resource selection cancelled. No changes made.");
+      agent.infoLine("All selected resources were already enabled.");
     }
-  } catch (error) {
-    agent.errorLine(`Error during codebase resource selection:`, error as Error);
   }
 }
 
-// noinspection JSUnusedGlobalSymbols
+async function enableResources(
+  codebaseService: CodeBaseService,
+  agent: Agent,
+  resourcesToEnable: string[],
+) {
+  const availableResources = codebaseService.getAvailableResources();
+  const activeResources = codebaseService.getActiveResourceNames();
+  
+  for (const name of resourcesToEnable) {
+    if (!availableResources.includes(name)) {
+      agent.errorLine(`Unknown codebase resource: ${name}`);
+      return;
+    }
+  }
+
+  let enabledCount = 0;
+  for (const name of resourcesToEnable) {
+    if (activeResources.has(name)) {
+      agent.infoLine(`Codebase resource '${name}' is already enabled.`);
+    } else {
+      try {
+        codebaseService.enableResources([name]);
+        agent.infoLine(`Enabled codebase resource: ${name}`);
+        enabledCount++;
+      } catch (error) {
+        agent.errorLine(`Failed to enable codebase resource '${name}': ${error}`);
+      }
+    }
+  }
+
+  if (enabledCount > 0) {
+    agent.infoLine(`Successfully enabled ${enabledCount} resource(s).`);
+  }
+}
+
+async function listResources(codebaseService: CodeBaseService, agent: Agent) {
+  const activeResources = Array.from(codebaseService.getActiveResourceNames());
+  
+  if (activeResources.length === 0) {
+    agent.infoLine("No codebase resources are currently enabled.");
+    return;
+  }
+
+  agent.infoLine(`Enabled codebase resources:`);
+  activeResources.forEach((resource: string, index: number) => {
+    agent.infoLine(`  ${index + 1}. ${resource}`);
+  });
+}
+
+async function showRepoMap(codebaseService: CodeBaseService, agent: Agent) {
+  const resources = codebaseService.getActiveResourceNames();
+  const hasRepoMapResource = Array.from(resources).some(name => {
+    const availableResources = codebaseService.getAvailableResources();
+    return availableResources.includes(name) && name.includes("RepoMap");
+  });
+
+  if (!hasRepoMapResource) {
+    agent.infoLine("No RepoMap resources are currently enabled. Enable a RepoMap resource first.");
+    return;
+  }
+
+  let found = false;
+  for await (const memory of codebaseService.getMemories(agent)) {
+    if (memory.content.includes("snippets of the symbols")) {
+      found = true;
+      agent.infoLine("Repository map:");
+      agent.infoLine(memory.content);
+    }
+  }
+
+  if (!found) {
+    agent.infoLine("No repository map found. Ensure RepoMap resources are configured and enabled.");
+  }
+}
+
+export async function execute(remainder: string, agent: Agent) {
+  const codebaseService = agent.requireFirstServiceByType(CodeBaseService);
+
+  const args = remainder ? remainder.trim().split(/\s+/) : [];
+  const action = args[0];
+  const actionArgs = args.slice(1);
+
+  switch (action) {
+    case "select":
+      await selectResources(codebaseService, agent);
+      break;
+
+    case "enable":
+      await enableResources(codebaseService, agent, actionArgs);
+      break;
+
+    case "list":
+    case "ls":
+      await listResources(codebaseService, agent);
+      break;
+
+    case "repo-map":
+    case "repomap":
+      await showRepoMap(codebaseService, agent);
+      break;
+
+    default:
+      const helpLines = help();
+      helpLines.forEach(line => agent.infoLine(line));
+      break;
+  }
+}
+
 export function help(): string[] {
   return [
-    "/codebaseResources [enable|set] <resource1> <resource2> ...",
-    "  - With no arguments: Shows interactive multi-selection for codebase resources",
-    "  - enable: Enable specific codebase resources",
-    "  - set: Set exactly which codebase resources are enabled (limited - doesn't clear existing)",
+    "/codebase [action] [resources...] - Manage codebase resources",
+    "  Actions:",
+    "    select             - Interactive resource selection",
+    "    enable [resources...] - Enable specific resources",
+    "    list               - List enabled resources",
+    "    repo-map           - Show repository map",
     "",
-    "Codebase resources control which file patterns and matches are active in the codebase service.",
-    "These resources determine what files are included when generating memories for the AI context.",
+    "  Examples:",
+    "    /codebase select        - Interactive selection",
+    "    /codebase enable MyResource - Enable specific resource",
+    "    /codebase list          - Show enabled resources",
+    "    /codebase repo-map      - Display repository map",
   ];
 }
 
