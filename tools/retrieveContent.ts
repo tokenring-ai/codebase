@@ -1,9 +1,9 @@
-import {z} from "zod";
 import Agent from "@tokenring-ai/agent/Agent";
+import {FileSystemService} from "@tokenring-ai/filesystem";
+import {z} from "zod";
 import CodeBaseService from "../CodeBaseService.js";
 import RepoMapResource from "../RepoMapResource.js";
 import WholeFileResource from "../WholeFileResource.js";
-import {FileSystemService} from "@tokenring-ai/filesystem";
 
 export const name = "codebase/retrieveContent";
 
@@ -12,8 +12,8 @@ export async function execute({resourceNames}: {resourceNames?: string[]}, agent
   content: string;
   error?: string;
 }> {
-  const codebaseService = agent.requireFirstServiceByType(CodeBaseService);
-  const fileSystem = agent.requireFirstServiceByType(FileSystemService);
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
+  const fileSystem = agent.requireServiceByType(FileSystemService);
   
   const availableResources = codebaseService.getAvailableResources();
   const resourceRegistry = (codebaseService as any).resourceRegistry;

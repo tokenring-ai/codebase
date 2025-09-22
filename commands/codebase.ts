@@ -1,7 +1,6 @@
 import {Agent} from "@tokenring-ai/agent";
 import joinDefault from "@tokenring-ai/utility/joinDefault";
 import CodeBaseService from "../CodeBaseService.js";
-import RepoMapResource from "../RepoMapResource.js";
 
 /**
  * /codebase [action] [resources...] - Manage codebase resources in the chat session
@@ -109,7 +108,7 @@ async function showRepoMap(codebaseService: CodeBaseService, agent: Agent) {
   }
 
   let found = false;
-  for await (const memory of codebaseService.getMemories(agent)) {
+  for await (const memory of codebaseService.getContextItems(agent)) {
     if (memory.content.includes("snippets of the symbols")) {
       found = true;
       agent.infoLine("Repository map:");
@@ -123,7 +122,7 @@ async function showRepoMap(codebaseService: CodeBaseService, agent: Agent) {
 }
 
 export async function execute(remainder: string, agent: Agent) {
-  const codebaseService = agent.requireFirstServiceByType(CodeBaseService);
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
 
   const args = remainder ? remainder.trim().split(/\s+/) : [];
   const action = args[0];

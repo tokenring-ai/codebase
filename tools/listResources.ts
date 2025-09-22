@@ -1,5 +1,5 @@
-import {z} from "zod";
 import Agent from "@tokenring-ai/agent/Agent";
+import {z} from "zod";
 import CodeBaseService from "../CodeBaseService.js";
 
 export const name = "codebase/listResources";
@@ -10,7 +10,7 @@ export async function execute({}, agent: Agent): Promise<{
   activeResources: string[];
   error?: string;
 }> {
-  const codebaseService = agent.requireFirstServiceByType(CodeBaseService);
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
   
   return {
     ok: true,

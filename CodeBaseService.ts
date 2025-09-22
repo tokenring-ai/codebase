@@ -1,5 +1,5 @@
 import {Agent} from "@tokenring-ai/agent";
-import {MemoryItemMessage, TokenRingService} from "@tokenring-ai/agent/types";
+import {ContextItem, TokenRingService} from "@tokenring-ai/agent/types";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
 import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/KeyedRegistryWithMultipleSelection";
@@ -21,8 +21,8 @@ export default class CodeBaseService implements TokenRingService {
   /**
    * Asynchronously yields memories from file tree, whole files, and repo map
    */
-  async* getMemories(agent: Agent): AsyncGenerator<MemoryItemMessage> {
-    const fileSystem = agent.requireFirstServiceByType(FileSystemService);
+  async* getContextItems(agent: Agent): AsyncGenerator<ContextItem> {
+    const fileSystem = agent.requireServiceByType(FileSystemService);
     const resources = this.resourceRegistry.getActiveItemEntries();
 
     // File tree
@@ -37,6 +37,7 @@ export default class CodeBaseService implements TokenRingService {
 
       if (fileTreeFiles.size > 0) {
         yield {
+          position: "afterPriorMessages",
           role: "user",
           content: `// Directory Tree of project files:\n${Array.from(fileTreeFiles)
             .sort()
@@ -59,6 +60,7 @@ export default class CodeBaseService implements TokenRingService {
         const repoMap = await this.generateRepoMap(repoMapFiles, fileSystem, agent);
         if (repoMap) {
           yield {
+            position: "afterPriorMessages",
             role: "user",
             content: repoMap,
           };
@@ -79,6 +81,7 @@ export default class CodeBaseService implements TokenRingService {
       for await (const file of wholeFiles) {
         const content = await fileSystem.getFile(file);
         yield {
+          position: "afterPriorMessages",
           role: "user",
           content: `// Complete contents of file: ${file}\n${content}`,
         };
