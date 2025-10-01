@@ -25,7 +25,7 @@ async function selectResources(
   const activeResources = codebaseService.getActiveResourceNames();
   const sortedResources = availableResources.sort((a, b) => a.localeCompare(b));
 
-  const selectedResources: string[] | undefined = await agent.askHuman({
+  const selectedResources: string[] | null = await agent.askHuman({
     type: "askForMultipleTreeSelection",
     message: `Current enabled codebase resources: ${joinDefault(", ", activeResources, "(none)")}. Choose codebase resources to enable:`,
     tree: {
