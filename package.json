@@ -1,19 +1,19 @@
 {
- "name": "@tokenring-ai/codebase",
- "description": "Codebase service",
- "version": "0.1.0",
- "dependencies": {
-  "@tokenring-ai/filesystem": "0.1.0",
-  "code-chopper": "^0.1.3",
-  "zod": "^4.0.17"
- },
- "exports": {
-  ".": "./index.ts",
-  "./*": "./*.ts"
- },
- "license": "MIT",
- "scripts": {
-  "test": "node_modules/.bin/vitest run"
- },
- "type": "module"
+	"name": "@tokenring-ai/codebase",
+	"description": "Codebase service",
+	"version": "0.1.0",
+	"dependencies": {
+		"@tokenring-ai/filesystem": "0.1.0",
+		"code-chopper": "^0.1.3",
+		"zod": "^4.1.11"
+	},
+	"exports": {
+		".": "./index.ts",
+		"./*": "./*.ts"
+	},
+	"license": "MIT",
+	"scripts": {
+		"test": "node_modules/.bin/vitest run"
+	},
+	"type": "module"
 }
