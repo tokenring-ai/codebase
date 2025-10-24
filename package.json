@@ -4,6 +4,7 @@
 	"version": "0.1.0",
 	"dependencies": {
 		"@tokenring-ai/filesystem": "0.1.0",
+  "@tokenring-ai/utility": "0.1.0",
 		"code-chopper": "^0.1.3",
 		"zod": "^4.1.11"
 	},
