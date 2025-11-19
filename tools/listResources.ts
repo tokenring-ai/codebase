@@ -1,28 +1,28 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import { z } from "zod";
+import {z} from "zod";
 import CodeBaseService from "../CodeBaseService.js";
 
 export const name = "codebase/listResources";
 
 export async function execute(
-	{},
-	agent: Agent,
+  {},
+  agent: Agent,
 ): Promise<{
-	ok: boolean;
-	availableResources: string[];
-	activeResources: string[];
-	error?: string;
+  ok: boolean;
+  availableResources: string[];
+  activeResources: string[];
+  error?: string;
 }> {
-	const codebaseService = agent.requireServiceByType(CodeBaseService);
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
 
-	return {
-		ok: true,
-		availableResources: codebaseService.getAvailableResources(),
-		activeResources: Array.from(codebaseService.getActiveResourceNames()),
-	};
+  return {
+    ok: true,
+    availableResources: codebaseService.getAvailableResources(),
+    activeResources: Array.from(codebaseService.getActiveResourceNames()),
+  };
 }
 
 export const description =
-	"Lists all available and currently active codebase resources.";
+  "Lists all available and currently active codebase resources.";
 
 export const inputSchema = z.object({});
