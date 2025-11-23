@@ -1,5 +1,5 @@
 import {Agent} from "@tokenring-ai/agent";
-import joinDefault from "@tokenring-ai/utility/joinDefault";
+import joinDefault from "@tokenring-ai/utility/string/joinDefault";
 import CodeBaseService from "../CodeBaseService.js";
 
 /**
