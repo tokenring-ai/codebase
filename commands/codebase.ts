@@ -1,4 +1,5 @@
 import {Agent} from "@tokenring-ai/agent";
+import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import joinDefault from "@tokenring-ai/utility/string/joinDefault";
 import CodeBaseService from "../CodeBaseService.js";
 
@@ -14,7 +15,7 @@ import CodeBaseService from "../CodeBaseService.js";
  * - repo-map: Show the repository map
  */
 
-export const description: string =
+const description: string =
   "/codebase [action] [resources...] - Manage codebase resources (select, enable, disable, list, clear, repo-map).";
 
 async function selectResources(codebaseService: CodeBaseService, agent: Agent) {
@@ -128,7 +129,7 @@ async function showRepoMap(codebaseService: CodeBaseService, agent: Agent) {
   }
 }
 
-export async function execute(remainder: string, agent: Agent) {
+async function execute(remainder: string, agent: Agent) {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
 
   const args = remainder ? remainder.trim().split(/\s+/) : [];
@@ -209,3 +210,9 @@ function buildResourceTree(resourceNames: string[]) {
   }
   return children;
 }
+
+export default {
+  description,
+  execute,
+  help,
+} as TokenRingAgentCommand

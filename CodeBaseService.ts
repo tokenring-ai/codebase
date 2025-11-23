@@ -1,7 +1,8 @@
 import {Agent} from "@tokenring-ai/agent";
-import type {ContextItem, TokenRingService} from "@tokenring-ai/agent/types";
+import type {ContextItem} from "@tokenring-ai/agent/types";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
+import {TokenRingService} from "@tokenring-ai/app/types";
 import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/registry/KeyedRegistryWithMultipleSelection";
 import {createParserFactory, type LanguageEnum, parseCodeAndChunk,} from "code-chopper";
 import path from "path";

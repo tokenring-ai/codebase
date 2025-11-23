@@ -1,6 +1,6 @@
-import type {AgentTeam, TokenRingPackage} from "@tokenring-ai/agent";
 import {AgentCommandService} from "@tokenring-ai/agent";
 import {ChatService} from "@tokenring-ai/chat";
+import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
 import * as chatCommands from "./chatCommands.ts";
 import CodeBaseService from "./CodeBaseService.ts";
@@ -25,17 +25,17 @@ export default {
   name: packageJSON.name,
   version: packageJSON.version,
   description: packageJSON.description,
-  install(agentTeam: AgentTeam) {
-    const config = agentTeam.getConfigSlice("codebase", CodeBaseConfigSchema);
+  install(app: TokenRingApp) {
+    const config = app.getConfigSlice("codebase", CodeBaseConfigSchema);
     if (config) {
-      agentTeam.waitForService(ChatService, chatService =>
+      app.waitForService(ChatService, chatService =>
         chatService.addTools(packageJSON.name, tools)
       );
-      agentTeam.waitForService(AgentCommandService, agentCommandService =>
+      app.waitForService(AgentCommandService, agentCommandService =>
         agentCommandService.addAgentCommands(chatCommands)
       );
       const codebaseService = new CodeBaseService();
-      agentTeam.addServices(codebaseService);
+      app.addServices(codebaseService);
 
       for (const name in config.resources) {
         const resourceConfig = config.resources[name];
@@ -65,7 +65,7 @@ export default {
       }
     }
   },
-} as TokenRingPackage;
+} as TokenRingPlugin;
 
 export {default as FileTreeResource} from "./FileTreeResource.ts";
 export {default as RepoMapResource} from "./RepoMapResource.ts";

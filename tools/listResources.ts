@@ -1,10 +1,11 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {TokenRingToolDefinition} from "@tokenring-ai/chat/types";
 import {z} from "zod";
 import CodeBaseService from "../CodeBaseService.js";
 
-export const name = "codebase/listResources";
+const name = "codebase/listResources";
 
-export async function execute(
+async function execute(
   {},
   agent: Agent,
 ): Promise<{
@@ -22,7 +23,11 @@ export async function execute(
   };
 }
 
-export const description =
+const description =
   "Lists all available and currently active codebase resources.";
 
-export const inputSchema = z.object({});
+const inputSchema = z.object({});
+
+export default {
+  name, description, inputSchema, execute,
+} as TokenRingToolDefinition<typeof inputSchema>;

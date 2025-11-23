@@ -1,14 +1,15 @@
 import Agent from "@tokenring-ai/agent/Agent";
+import {TokenRingToolDefinition} from "@tokenring-ai/chat/types";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import {z} from "zod";
 import CodeBaseService from "../CodeBaseService.js";
 import RepoMapResource from "../RepoMapResource.js";
 import WholeFileResource from "../WholeFileResource.js";
 
-export const name = "codebase/retrieveContent";
+const name = "codebase/retrieveContent";
 
-export async function execute(
-  {resourceNames}: { resourceNames?: string[] },
+async function execute(
+  {resourceNames}: z.infer<typeof inputSchema>,
   agent: Agent,
 ): Promise<{
   ok: boolean;
@@ -73,11 +74,15 @@ export async function execute(
   };
 }
 
-export const description =
+const description =
   "Retrieves content from specified codebase resources (file trees, repo maps, or whole files).";
 
-export const inputSchema = z.object({
+const inputSchema = z.object({
   resourceNames: z
     .array(z.string())
     .describe("Names of codebase resources to retrieve content from"),
 });
+
+export default {
+  name, description, inputSchema, execute,
+} as TokenRingToolDefinition<typeof inputSchema>;
