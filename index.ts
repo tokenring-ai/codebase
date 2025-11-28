@@ -2,12 +2,12 @@ import {AgentCommandService} from "@tokenring-ai/agent";
 import {ChatService} from "@tokenring-ai/chat";
 import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
-import * as chatCommands from "./chatCommands.ts";
+import chatCommands from "./chatCommands.ts";
 import CodeBaseService from "./CodeBaseService.ts";
 import FileTreeResource from "./FileTreeResource.ts";
 import packageJSON from "./package.json" with {type: "json"};
 import RepoMapResource from "./RepoMapResource.ts";
-import * as tools from "./tools.ts";
+import tools from "./tools.ts";
 import WholeFileResource from "./WholeFileResource.ts";
 
 export const CodeBaseConfigSchema = z

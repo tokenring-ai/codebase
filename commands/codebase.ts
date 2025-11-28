@@ -16,7 +16,7 @@ import CodeBaseService from "../CodeBaseService.js";
  */
 
 const description: string =
-  "/codebase [action] [resources...] - Manage codebase resources (select, enable, disable, list, clear, repo-map).";
+  "/codebase - Manage codebase resources (select, enable, disable, list, clear, repo-map).";
 
 async function selectResources(codebaseService: CodeBaseService, agent: Agent) {
   const availableResources = codebaseService.getAvailableResources();
@@ -25,7 +25,11 @@ async function selectResources(codebaseService: CodeBaseService, agent: Agent) {
 
   const selectedResources: string[] | null = await agent.askHuman({
     type: "askForMultipleTreeSelection",
-    message: `Current enabled codebase resources: ${joinDefault(", ", activeResources, "(none)")}. Choose codebase resources to enable:`,
+    message: `Current enabled codebase resources: ${joinDefault(
+      ", ",
+      activeResources,
+      "(none)",
+    )}. Choose codebase resources to enable:`,
     tree: {
       name: "Codebase Resource Selection",
       children: buildResourceTree(sortedResources),
@@ -156,28 +160,51 @@ async function execute(remainder: string, agent: Agent) {
       break;
 
     default:
-      const helpLines = help();
-      helpLines.forEach((line) => agent.infoLine(line));
+      agent.chatOutput(help);
       break;
   }
 }
 
-export function help(): string[] {
-  return [
-    "/codebase [action] [resources...] - Manage codebase resources",
-    "  Actions:",
-    "    select             - Interactive resource selection",
-    "    enable [resources...] - Enable specific resources",
-    "    list               - List enabled resources",
-    "    repo-map           - Show repository map",
-    "",
-    "  Examples:",
-    "    /codebase select        - Interactive selection",
-    "    /codebase enable MyResource - Enable specific resource",
-    "    /codebase list          - Show enabled resources",
-    "    /codebase repo-map      - Display repository map",
-  ];
-}
+const help = `
+# /codebase - Codebase Resource Management
+
+**Usage:** \`/codebase [action] [resources...]\`
+
+Manage codebase resources in your chat session. Resources include source code documentation, API references, and other code-related materials that help the AI understand and work with your codebase.
+
+## Available Actions
+
+| Action | Description |
+|--------|-------------|
+| **select** | Interactive resource selection via tree view (recommended for exploring available resources) |
+| **enable [resources...]** | Enable specific codebase resources by name<br>Example: \`/codebase enable src/utils src/types\` |
+| **disable [resources...]** | Disable specific codebase resources<br>Example: \`/codebase disable src/utils\` |
+| **list, ls** | List all currently enabled codebase resources |
+| **clear** | Remove all codebase resources from the session |
+| **repo-map, repomap** | Display the repository map and structure |
+
+## Common Usage Examples
+
+- \`/codebase select\` - Browse and select resources interactively
+- \`/codebase enable\` - Enable all available resources
+- \`/codebase enable src\` - Enable all resources under src/ directory
+- \`/codebase enable api docs\` - Enable specific resources by name
+- \`/codebase list\` - Show currently enabled resources
+- \`/codebase repo-map\` - View repository structure and symbols
+
+## Notes
+
+- Resources are organized hierarchically (e.g., src/components, src/utils)
+- Use 'select' for exploring available resources when unsure of exact names
+- RepoMap functionality requires RepoMap resources to be enabled first
+- Changes to resource availability persist across chat sessions
+
+## Troubleshooting
+
+- **Unknown resource names:** Use \`/codebase select\` to see available options
+- **RepoMap not showing:** Ensure RepoMap resources are enabled
+- **Permission errors:** Check resource access permissions in your codebase
+`;
 
 function buildResourceTree(resourceNames: string[]) {
   const children: any[] = [];
