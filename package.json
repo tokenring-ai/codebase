@@ -6,7 +6,7 @@
   "@tokenring-ai/filesystem": "0.1.0",
   "@tokenring-ai/utility": "0.1.0",
   "code-chopper": "^0.1.6",
-  "zod": "^4.1.12"
+  "zod": "^4.1.13"
  },
  "exports": {
   ".": "./index.ts",
