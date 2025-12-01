@@ -13,93 +13,13 @@ export default class CodeBaseService implements TokenRingService {
   name = "CodeBaseService";
   description =
     "Manages codebase resources for providing file content and directory structure to AI context, allowing selective inclusion of project files and directories.";
-  private resourceRegistry =
+  resourceRegistry =
     new KeyedRegistryWithMultipleSelection<FileMatchResource>();
 
   registerResource = this.resourceRegistry.register;
   getActiveResourceNames = this.resourceRegistry.getActiveItemNames;
   enableResources = this.resourceRegistry.enableItems;
   getAvailableResources = this.resourceRegistry.getAllItemNames;
-
-  /**
-   * Asynchronously yields memories from file tree, whole files, and repo map
-   */
-  async* getContextItems(agent: Agent): AsyncGenerator<ContextItem> {
-    const fileSystem = agent.requireServiceByType(FileSystemService);
-    const resources = this.resourceRegistry.getActiveItemEntries();
-
-    // File tree
-    {
-      const fileTreeFiles = new Set<string>();
-      for (const name in resources) {
-        const resource = resources[name];
-        if (
-          !(resource instanceof WholeFileResource) &&
-          !(resource instanceof RepoMapResource)
-        ) {
-          await resource.addFilesToSet(fileTreeFiles, agent);
-        }
-      }
-
-      if (fileTreeFiles.size > 0) {
-        yield {
-          position: "afterPriorMessages",
-          role: "user",
-          content: `// Directory Tree of project files:\n${Array.from(
-            fileTreeFiles,
-          )
-            .sort()
-            .join("\n")}`,
-        };
-      }
-    }
-
-    // Repo map
-    {
-      const repoMapFiles = new Set<string>();
-      for (const name in resources) {
-        const resource = resources[name];
-        if (resource instanceof RepoMapResource) {
-          await resource.addFilesToSet(repoMapFiles, agent);
-        }
-      }
-
-      if (repoMapFiles.size > 0) {
-        const repoMap = await this.generateRepoMap(
-          repoMapFiles,
-          fileSystem,
-          agent,
-        );
-        if (repoMap) {
-          yield {
-            position: "afterPriorMessages",
-            role: "user",
-            content: repoMap,
-          };
-        }
-      }
-    }
-
-    // Whole files
-    {
-      const wholeFiles = new Set<string>();
-      for (const name in resources) {
-        const resource = resources[name];
-        if (resource instanceof WholeFileResource) {
-          await resource.addFilesToSet(wholeFiles, agent);
-        }
-      }
-
-      for await (const file of wholeFiles) {
-        const content = await fileSystem.getFile(file);
-        yield {
-          position: "afterPriorMessages",
-          role: "user",
-          content: `// Complete contents of file: ${file}\n${content}`,
-        };
-      }
-    }
-  }
 
   async generateRepoMap(
     files: Set<string>,

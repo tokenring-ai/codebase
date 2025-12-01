@@ -1,7 +1,10 @@
 import {Agent} from "@tokenring-ai/agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import {FileSystemService} from "@tokenring-ai/filesystem";
 import joinDefault from "@tokenring-ai/utility/string/joinDefault";
 import CodeBaseService from "../CodeBaseService.js";
+import getContextItems from "../contextHandlers/codebaseContext.ts";
+import RepoMapResource from "../RepoMapResource.ts";
 
 /**
  * /codebase [action] [resources...] - Manage codebase resources in the chat session
@@ -104,33 +107,42 @@ async function listResources(codebaseService: CodeBaseService, agent: Agent) {
 }
 
 async function showRepoMap(codebaseService: CodeBaseService, agent: Agent) {
-  const resources = codebaseService.getActiveResourceNames();
-  const hasRepoMapResource = Array.from(resources).some((name) => {
-    const availableResources = codebaseService.getAvailableResources();
-    return availableResources.includes(name) && name.includes("RepoMap");
-  });
+  const fileSystem = agent.requireServiceByType(FileSystemService);
 
-  if (!hasRepoMapResource) {
+  const repoMaps = Object.entries(codebaseService.resourceRegistry.getActiveItemEntries())
+    .filter(([name, resource]) => resource instanceof RepoMapResource)
+    .map(([name,resource]) => resource);
+
+  if (repoMaps.length === 0) {
     agent.infoLine(
       "No RepoMap resources are currently enabled. Enable a RepoMap resource first.",
     );
     return;
   }
 
-  let found = false;
-  for await (const memory of codebaseService.getContextItems(agent)) {
-    if (memory.content.includes("snippets of the symbols")) {
-      found = true;
-      agent.infoLine("Repository map:");
-      agent.infoLine(memory.content);
+  const repoMapFiles = new Set<string>();
+
+  for (const resource of repoMaps) {
+    await resource.addFilesToSet(repoMapFiles, agent);
+  }
+
+  if (repoMapFiles.size > 0) {
+    const repoMap = await codebaseService.generateRepoMap(
+      repoMapFiles,
+      fileSystem,
+      agent,
+    );
+
+    if (repoMap) {
+      agent.chatOutput("Repository map:\n");
+      agent.infoLine(repoMap);
+      return;
     }
   }
 
-  if (!found) {
-    agent.infoLine(
-      "No repository map found. Ensure RepoMap resources are configured and enabled.",
-    );
-  }
+  agent.infoLine(
+    "No repository map found. Ensure RepoMap resources are configured and enabled.",
+  );
 }
 
 async function execute(remainder: string, agent: Agent) {

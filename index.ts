@@ -3,6 +3,7 @@ import {ChatService} from "@tokenring-ai/chat";
 import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
 import {z} from "zod";
 import chatCommands from "./chatCommands.ts";
+import contextHandlers from "./contextHandlers.ts";
 import CodeBaseService from "./CodeBaseService.ts";
 import FileTreeResource from "./FileTreeResource.ts";
 import packageJSON from "./package.json" with {type: "json"};
@@ -28,9 +29,10 @@ export default {
   install(app: TokenRingApp) {
     const config = app.getConfigSlice("codebase", CodeBaseConfigSchema);
     if (config) {
-      app.waitForService(ChatService, chatService =>
-        chatService.addTools(packageJSON.name, tools)
-      );
+      app.waitForService(ChatService, chatService => {
+        chatService.addTools(packageJSON.name, tools);
+        chatService.registerContextHandlers(contextHandlers);
+      });
       app.waitForService(AgentCommandService, agentCommandService =>
         agentCommandService.addAgentCommands(chatCommands)
       );
