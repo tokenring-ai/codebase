@@ -1,5 +1,5 @@
-import {default as listResources} from "./tools/listResources.ts";
-import {default as retrieveContent} from "./tools/retrieveContent.ts";
+import listResources from "./tools/listResources.ts";
+import retrieveContent from "./tools/retrieveContent.ts";
 
 export default {
   listResources,

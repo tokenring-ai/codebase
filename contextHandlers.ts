@@ -1,5 +1,5 @@
 import {ContextHandler} from "@tokenring-ai/chat/types";
-import {default as codebaseContext} from "./contextHandlers/codebaseContext.ts";
+import codebaseContext from "./contextHandlers/codebaseContext.ts";
 
 export default {
   'codebase-context': codebaseContext,
