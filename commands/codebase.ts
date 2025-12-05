@@ -36,7 +36,7 @@ async function selectResources(codebaseService: CodeBaseService, agent: Agent) {
       name: "Codebase Resource Selection",
       children: buildResourceTree(sortedResources),
     },
-    initialSelection: activeResources,
+    initialSelection: Array.from(activeResources),
   });
 
   if (selectedResources && selectedResources.length > 0) {
