@@ -27,11 +27,8 @@ async function selectResources(codebaseService: CodeBaseService, agent: Agent) {
 
   const selectedResources: string[] | null = await agent.askHuman({
     type: "askForMultipleTreeSelection",
-    message: `Current enabled codebase resources: ${joinDefault(
-      ", ",
-      activeResources,
-      "(none)",
-    )}. Choose codebase resources to enable:`,
+    title: "Codebase Resource Selection",
+    message: `Select resources to include in your chat context`,
     tree: {
       name: "Codebase Resource Selection",
       children: buildResourceTree(sortedResources),
