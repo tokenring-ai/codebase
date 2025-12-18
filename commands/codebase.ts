@@ -1,7 +1,6 @@
 import {Agent} from "@tokenring-ai/agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {FileSystemService} from "@tokenring-ai/filesystem";
-import joinDefault from "@tokenring-ai/utility/string/joinDefault";
 import CodeBaseService from "../CodeBaseService.js";
 import RepoMapResource from "../RepoMapResource.ts";
 
