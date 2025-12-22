@@ -3,7 +3,7 @@ import {TokenRingToolDefinition} from "@tokenring-ai/chat/types";
 import {z} from "zod";
 import CodeBaseService from "../CodeBaseService.js";
 
-const name = "codebase/listResources";
+const name = "codebase_listResources";
 
 async function execute(
   {},

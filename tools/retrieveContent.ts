@@ -6,7 +6,7 @@ import CodeBaseService from "../CodeBaseService.js";
 import RepoMapResource from "../RepoMapResource.js";
 import WholeFileResource from "../WholeFileResource.js";
 
-const name = "codebase/retrieveContent";
+const name = "codebase_retrieveContent";
 
 async function execute(
   {resourceNames}: z.infer<typeof inputSchema>,
