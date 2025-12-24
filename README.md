@@ -16,11 +16,12 @@ The `@tokenring-ai/codebase` package provides a comprehensive service for managi
 - **Multi-language Support**: Supports JavaScript, TypeScript, Python, C/C++, Rust, Go, Java, Ruby, Bash, and more
 - **Tool Integration**: Built-in tools for listing and retrieving resource content
 - **Automatic Context Injection**: Context handlers automatically provide resources to agent context
+- **Hierarchical Resource Selection**: Interactive tree selection for organizing resources by directory structure
 
 ## Installation
 
 ```bash
-npm install @tokenring-ai/codebase
+bun install @tokenring-ai/codebase
 ```
 
 ## Quick Start
@@ -322,13 +323,13 @@ getLanguageFromExtension(".go")  // "go"
 getLanguageFromExtension(".java") // "java"
 getLanguageFromExtension(".rb")  // "ruby"
 getLanguageFromExtension(".sh")  // "bash"
-```
 
 Repository map generation uses `code-chopper` library:
 - Parses code into chunks
 - Extracts symbols and functions
 - Formats output for AI context
 - Supports filtering and chunking options
+```
 
 ## API Reference
 
@@ -341,13 +342,18 @@ class CodeBaseService implements TokenRingService {
   resourceRegistry: KeyedRegistryWithMultipleSelection<FileMatchResource>;
   
   // Resource management
-  registerResource(name: string, resource: FileMatchResource): void;
-  getActiveResourceNames(): Set<string>;
-  enableResources(names: string[]): void;
-  getAvailableResources(): string[];
+  registerResource = this.resourceRegistry.register;
+  getActiveResourceNames = this.resourceRegistry.getActiveItemNames;
+  enableResources = this.resourceRegistry.enableItems;
+  getAvailableResources = this.resourceRegistry.getAllItemNames;
   
   // Repository mapping
-  generateRepoMap(files: Set<string>, fileSystem: FileSystemService, agent: Agent): Promise<string | null>;
+  async generateRepoMap(
+    files: Set<string>,
+    fileSystem: FileSystemService,
+    agent: Agent
+  ): Promise<string | null>;
+  
   getLanguageFromExtension(ext: string): LanguageEnum | null;
   formatFileOutput(filePath: string, chunks: any[]): string | null;
 }
@@ -415,7 +421,7 @@ export default async function* getContextItems(
 npx tsc
 
 # Run tests  
-npm test
+bun run test
 ```
 
 ### Testing
@@ -423,7 +429,7 @@ npm test
 Uses Vitest for testing. Run tests with:
 
 ```bash
-npm test
+bun run test
 ```
 
 ## Configuration Examples
