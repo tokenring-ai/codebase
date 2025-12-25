@@ -384,6 +384,17 @@ const CodeBaseConfigSchema = z.object({
 }).optional();
 ```
 
+### Exports
+
+From `index.ts`:
+```typescript
+export { CodeBaseConfigSchema } from "./index.ts";
+export { default as FileTreeResource } from "./FileTreeResource.ts";
+export { default as RepoMapResource } from "./RepoMapResource.ts";
+export { default as WholeFileResource } from "./WholeFileResource.ts";
+export { default as CodeBaseService } from "./CodeBaseService.ts";
+```
+
 ## Context Handler Integration
 
 The `codebase-context` handler provides automatic context injection:
