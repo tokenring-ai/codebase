@@ -28,7 +28,7 @@ export default class CodeBaseService implements TokenRingService {
 
     for (const file of files) {
       try {
-        const code = await fileSystem.getFile(file);
+        const code = await fileSystem.getFile(file, agent);
         if (!code) continue;
 
         const ext = path.extname(file);

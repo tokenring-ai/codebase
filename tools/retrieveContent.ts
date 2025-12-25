@@ -55,7 +55,7 @@ async function execute(
       }
     } else if (resource instanceof WholeFileResource) {
       for (const file of files) {
-        const content = await fileSystem.getFile(file);
+        const content = await fileSystem.getFile(file, agent);
         results.push(`=== ${name} - ${file} ===\n${content}`);
       }
     } else {
