@@ -1,9 +1,10 @@
 import {AgentCommandService} from "@tokenring-ai/agent";
+import {TokenRingPlugin} from "@tokenring-ai/app";
 import {ChatService} from "@tokenring-ai/chat";
-import TokenRingApp, {TokenRingPlugin} from "@tokenring-ai/app";
+import {z} from "zod";
 import chatCommands from "./chatCommands.ts";
-import contextHandlers from "./contextHandlers.ts";
 import CodeBaseService from "./CodeBaseService.ts";
+import contextHandlers from "./contextHandlers.ts";
 import FileTreeResource from "./FileTreeResource.ts";
 import {CodeBaseConfigSchema} from "./index.ts";
 import packageJSON from "./package.json" with {type: "json"};
@@ -11,14 +12,17 @@ import RepoMapResource from "./RepoMapResource.ts";
 import tools from "./tools.ts";
 import WholeFileResource from "./WholeFileResource.ts";
 
+const packageConfigSchema = z.object({
+  codebase: CodeBaseConfigSchema.optional(),
+});
 
 export default {
   name: packageJSON.name,
   version: packageJSON.version,
   description: packageJSON.description,
-  install(app: TokenRingApp) {
-    const config = app.getConfigSlice("codebase", CodeBaseConfigSchema);
-    if (config) {
+  install(app, config) {
+    // const config = app.getConfigSlice("codebase", CodeBaseConfigSchema);
+    if (config.codebase) {
       app.waitForService(ChatService, chatService => {
         chatService.addTools(packageJSON.name, tools);
         chatService.registerContextHandlers(contextHandlers);
@@ -29,8 +33,8 @@ export default {
       const codebaseService = new CodeBaseService();
       app.addServices(codebaseService);
 
-      for (const name in config.resources) {
-        const resourceConfig = config.resources[name];
+      for (const name in config.codebase.resources) {
+        const resourceConfig = config.codebase.resources[name];
         switch (resourceConfig.type) {
           case "fileTree":
             codebaseService.registerResource(
@@ -52,9 +56,8 @@ export default {
             break;
         }
       }
-      if (config.default?.resources) {
-        codebaseService.enableResources(config.default.resources);
-      }
+      codebaseService.enableResources(config.codebase.defaultResources);
     }
   },
-} satisfies TokenRingPlugin;
+  config: packageConfigSchema
+} satisfies TokenRingPlugin<typeof packageConfigSchema>;

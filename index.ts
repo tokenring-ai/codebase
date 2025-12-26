@@ -3,11 +3,7 @@ import {z} from "zod";
 export const CodeBaseConfigSchema = z
   .object({
     resources: z.record(z.string(), z.any()),
-    default: z
-      .object({
-        resources: z.array(z.string()),
-      })
-      .optional(),
+    defaultResources: z.array(z.string()).default([]),
   })
   .optional();
 
