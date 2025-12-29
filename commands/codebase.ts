@@ -1,5 +1,6 @@
 import {Agent} from "@tokenring-ai/agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import createSubcommandRouter from "@tokenring-ai/agent/util/subcommandRouter";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import CodeBaseService from "../CodeBaseService.js";
 import RepoMapResource from "../RepoMapResource.ts";
@@ -19,9 +20,10 @@ import RepoMapResource from "../RepoMapResource.ts";
 const description: string =
   "/codebase - Manage codebase resources (select, enable, disable, list, clear, repo-map).";
 
-async function selectResources(codebaseService: CodeBaseService, agent: Agent) {
+async function selectResources(remainder: string, agent: Agent) {
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
   const availableResources = codebaseService.getAvailableResources();
-  const activeResources = codebaseService.getActiveResourceNames();
+  const activeResources = codebaseService.getEnabledResourceNames(agent);
   const sortedResources = availableResources.sort((a, b) => a.localeCompare(b));
 
   const selectedResources: string[] | null = await agent.askHuman({
@@ -36,59 +38,44 @@ async function selectResources(codebaseService: CodeBaseService, agent: Agent) {
   });
 
   if (selectedResources && selectedResources.length > 0) {
-    const resourcesToEnable = selectedResources.filter(
-      (r) => !activeResources.has(r),
+    const enabledResources = codebaseService.setEnabledResources(selectedResources, agent);
+    agent.infoLine(
+      `Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`,
     );
-    if (resourcesToEnable.length > 0) {
-      codebaseService.enableResources(resourcesToEnable);
-      agent.infoLine(
-        `Enabled codebase resources: ${resourcesToEnable.join(", ")}`,
-      );
-    } else {
-      agent.infoLine("All selected resources were already enabled.");
-    }
   }
 }
 
 async function enableResources(
-  codebaseService: CodeBaseService,
-  agent: Agent,
-  resourcesToEnable: string[],
+  remainder: string,
+  agent: Agent
 ) {
-  const availableResources = codebaseService.getAvailableResources();
-  const activeResources = codebaseService.getActiveResourceNames();
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
+  const resourcesToEnable = remainder.split(/\s+/).filter(Boolean);
 
-  for (const name of resourcesToEnable) {
-    if (!availableResources.includes(name)) {
-      agent.errorLine(`Unknown codebase resource: ${name}`);
-      return;
-    }
-  }
-
-  let enabledCount = 0;
-  for (const name of resourcesToEnable) {
-    if (activeResources.has(name)) {
-      agent.infoLine(`Codebase resource '${name}' is already enabled.`);
-    } else {
-      try {
-        codebaseService.enableResources([name]);
-        agent.infoLine(`Enabled codebase resource: ${name}`);
-        enabledCount++;
-      } catch (error) {
-        agent.errorLine(
-          `Failed to enable codebase resource '${name}': ${error}`,
-        );
-      }
-    }
-  }
-
-  if (enabledCount > 0) {
-    agent.infoLine(`Successfully enabled ${enabledCount} resource(s).`);
-  }
+  const enabledResources = codebaseService.enableResources(resourcesToEnable, agent);
+  agent.infoLine(`Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`)
 }
 
-async function listResources(codebaseService: CodeBaseService, agent: Agent) {
-  const activeResources = Array.from(codebaseService.getActiveResourceNames());
+async function disableResources(
+  remainder: string,
+  agent: Agent
+) {
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
+  const resourcesToDisable = remainder.split(/\s+/).filter(Boolean);
+  const disabledResources = codebaseService.disableResources(resourcesToDisable, agent);
+  agent.infoLine(`Currently enabled codebase resources: ${Array.from(disabledResources).join(", ")}`)
+}
+
+async function setResources(remainder: string, agent: Agent) {
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
+  const resourcesToSet = remainder.split(/\s+/).filter(Boolean);
+  const setResources = codebaseService.setEnabledResources(resourcesToSet, agent);
+  agent.infoLine(`Currently enabled codebase resources: ${Array.from(setResources).join(", ")}`)
+}
+
+async function listResources(remainder: string, agent: Agent) {
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
+  const activeResources = Array.from(codebaseService.getEnabledResourceNames(agent));
 
   if (activeResources.length === 0) {
     agent.infoLine("No codebase resources are currently enabled.");
@@ -101,12 +88,12 @@ async function listResources(codebaseService: CodeBaseService, agent: Agent) {
   });
 }
 
-async function showRepoMap(codebaseService: CodeBaseService, agent: Agent) {
+async function showRepoMap(remainder: string, agent: Agent) {
+  const codebaseService = agent.requireServiceByType(CodeBaseService);
   const fileSystem = agent.requireServiceByType(FileSystemService);
 
-  const repoMaps = Object.entries(codebaseService.resourceRegistry.getActiveItemEntries())
-    .filter(([name, resource]) => resource instanceof RepoMapResource)
-    .map(([name,resource]) => resource);
+  const repoMaps = Object.values(codebaseService.getEnabledResources(agent))
+    .filter(resource => resource instanceof RepoMapResource);
 
   if (repoMaps.length === 0) {
     agent.infoLine(
@@ -140,37 +127,16 @@ async function showRepoMap(codebaseService: CodeBaseService, agent: Agent) {
   );
 }
 
-async function execute(remainder: string, agent: Agent) {
-  const codebaseService = agent.requireServiceByType(CodeBaseService);
-
-  const args = remainder ? remainder.trim().split(/\s+/) : [];
-  const action = args[0];
-  const actionArgs = args.slice(1);
-
-  switch (action) {
-    case "select":
-      await selectResources(codebaseService, agent);
-      break;
-
-    case "enable":
-      await enableResources(codebaseService, agent, actionArgs);
-      break;
-
-    case "list":
-    case "ls":
-      await listResources(codebaseService, agent);
-      break;
-
-    case "repo-map":
-    case "repomap":
-      await showRepoMap(codebaseService, agent);
-      break;
-
-    default:
-      agent.chatOutput(help);
-      break;
-  }
-}
+const execute = createSubcommandRouter({
+  select: selectResources,
+  enable: enableResources,
+  disable: disableResources,
+  set: setResources,
+  list: listResources,
+  show: createSubcommandRouter({
+    repo: showRepoMap,
+  }),
+});
 
 const help = `
 # /codebase - Codebase Resource Management
@@ -184,27 +150,28 @@ Manage codebase resources in your chat session. Resources include source code do
 | Action | Description |
 |--------|-------------|
 | **select** | Interactive resource selection via tree view (recommended for exploring available resources) |
-| **enable [resources...]** | Enable specific codebase resources by name<br>Example: \`/codebase enable src/utils src/types\` |
-| **disable [resources...]** | Disable specific codebase resources<br>Example: \`/codebase disable src/utils\` |
-| **list, ls** | List all currently enabled codebase resources |
+| **enable** | Enable specific codebase resources by name<br>Example: \`/codebase enable src/utils src/types\` |
+| **disable** | Disable specific codebase resources<br>Example: \`/codebase disable src/utils\` |
+| **set** | Set specific codebase resources by name<br>Example: \`/codebase set src/utils src/types\` |
+| **list** | List all currently enabled codebase resources |
 | **clear** | Remove all codebase resources from the session |
-| **repo-map, repomap** | Display the repository map and structure |
+| **show repo** | Display the currently enabled repository map and structure |
 
 ## Common Usage Examples
 
 - \`/codebase select\` - Browse and select resources interactively
-- \`/codebase enable\` - Enable all available resources
-- \`/codebase enable src\` - Enable all resources under src/ directory
+- \`/codebase set src/docs\` - Set specific codebase resources by name
+- \`/codebase enable src\/\*\` - Enable all resources under src/ directory
 - \`/codebase enable api docs\` - Enable specific resources by name
+- \`/codebase disable src/\*\` - Disable specific resources by name
 - \`/codebase list\` - Show currently enabled resources
-- \`/codebase repo-map\` - View repository structure and symbols
+- \`/codebase show repo\` - View repository structure and symbols
 
 ## Notes
 
 - Resources are organized hierarchically (e.g., src/components, src/utils)
 - Use 'select' for exploring available resources when unsure of exact names
 - RepoMap functionality requires RepoMap resources to be enabled first
-- Changes to resource availability persist across chat sessions
 
 ## Troubleshooting
 

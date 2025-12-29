@@ -2,21 +2,69 @@ import {Agent} from "@tokenring-ai/agent";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
 import {TokenRingService} from "@tokenring-ai/app/types";
-import KeyedRegistryWithMultipleSelection from "@tokenring-ai/utility/registry/KeyedRegistryWithMultipleSelection";
+import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import {createParserFactory, type LanguageEnum, parseCodeAndChunk,} from "code-chopper";
 import path from "path";
+import {CodeBaseAgentConfigSchema} from "./schema.ts";
+import { CodeBaseState } from "./state/codeBaseState";
 
 export default class CodeBaseService implements TokenRingService {
   name = "CodeBaseService";
   description =
     "Manages codebase resources for providing file content and directory structure to AI context, allowing selective inclusion of project files and directories.";
   resourceRegistry =
-    new KeyedRegistryWithMultipleSelection<FileMatchResource>();
+    new KeyedRegistry<FileMatchResource>();
 
   registerResource = this.resourceRegistry.register;
-  getActiveResourceNames = this.resourceRegistry.getActiveItemNames;
-  enableResources = this.resourceRegistry.enableItems;
   getAvailableResources = this.resourceRegistry.getAllItemNames;
+
+  async attach(agent: Agent): Promise<void> {
+    const { enabledResources } = agent.getAgentConfigSlice('codebase', CodeBaseAgentConfigSchema);
+    // The enabled resources can include wildcards, so they need to be mapped to actual tool names with ensureItemNamesLike
+    agent.initializeState(CodeBaseState, {
+      enabledResources: enabledResources.map(resourceName => this.resourceRegistry.ensureItemNamesLike(resourceName)).flat()
+    });
+  }
+
+  getEnabledResourceNames(agent: Agent): Set<string> {
+    return agent.getState(CodeBaseState).enabledResources;
+  }
+
+  getEnabledResources(agent: Agent): FileMatchResource[] {
+    return Array.from(agent.getState(CodeBaseState).enabledResources).map(r => this.resourceRegistry.requireItemByName(r));
+  }
+
+  setEnabledResources(resourceNames: string[], agent: Agent): Set<string> {
+    const matchedResourceNames = resourceNames.map(resourceName => this.resourceRegistry.ensureItemNamesLike(resourceName)).flat();
+
+    return agent.mutateState(CodeBaseState, (state) => {
+      state.enabledResources = new Set(matchedResourceNames);
+      return state.enabledResources;
+    })
+  }
+
+  enableResources(resourceNames: string[], agent: Agent): Set<string> {
+    const matchedResourceNames = resourceNames.map(resourceName => this.resourceRegistry.ensureItemNamesLike(resourceName)).flat();
+
+    return agent.mutateState(CodeBaseState, (state) => {
+      for (const resourceName of matchedResourceNames) {
+        state.enabledResources.add(resourceName);
+      }
+      return state.enabledResources;
+    })
+  }
+
+  disableResources(resourceNames: string[], agent: Agent): Set<string> {
+    const matchedResourceNames = resourceNames.map(resourceName => this.resourceRegistry.ensureItemNamesLike(resourceName)).flat();
+
+    return agent.mutateState(CodeBaseState, (state) => {
+      for (const resourceName of matchedResourceNames) {
+        state.enabledResources.delete(resourceName);
+      }
+      return state.enabledResources;
+    });
+  }
+
 
   async generateRepoMap(
     files: Set<string>,
@@ -51,7 +99,7 @@ export default class CodeBaseService implements TokenRingService {
     factory.dispose();
 
     if (repoMap.length > 0) {
-      return `// These are snippets of the symbols in the project. This DOES NOT contain the full file contents. This only includes relevant symbols for you to reference so you know what to retrieve with the retrieveFiles tool:\n${repoMap.join("\n")}`;
+      return `// These are snippets of the symbols in the project. This DOES NOT contain the full file contents. This only includes relevant symbols for you to reference so you know what to retrieve with the retrieveFiles resource:\n${repoMap.join("\n")}`;
     }
     return null;
   }

@@ -8,7 +8,7 @@ import WholeFileResource from "../WholeFileResource.ts";
 export default async function * getContextItems(input: string, chatConfig: ChatConfig, params: {}, agent: Agent): AsyncGenerator<ContextItem> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const fileSystem = agent.requireServiceByType(FileSystemService);
-  const resources = codebaseService['resourceRegistry'].getActiveItemEntries();
+  const resources = codebaseService.getEnabledResources(agent);
 
   // File tree
   {
