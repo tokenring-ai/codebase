@@ -2,12 +2,12 @@ import {Agent} from "@tokenring-ai/agent";
 import type {ResetWhat} from "@tokenring-ai/agent/AgentEvents";
 import type {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {z} from "zod";
-import {CodeBaseAgentConfigSchema, CodeBaseConfigSchema} from "../schema.ts";
+import {CodeBaseServiceConfigSchema} from "../schema.ts";
 
 export class CodeBaseState implements AgentStateSlice {
   name = "CodeBaseState";
   enabledResources = new Set<string>([]);
-  constructor(readonly initialConfig: z.output<typeof CodeBaseAgentConfigSchema>) {
+  constructor(readonly initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]) {
     for (const resource of initialConfig.enabledResources) {
       this.enabledResources.add(resource);
     }

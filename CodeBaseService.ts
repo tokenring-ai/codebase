@@ -2,10 +2,12 @@ import {Agent} from "@tokenring-ai/agent";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
 import {TokenRingService} from "@tokenring-ai/app/types";
+import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import {createParserFactory, type LanguageEnum, parseCodeAndChunk,} from "code-chopper";
 import path from "path";
-import {CodeBaseAgentConfigSchema} from "./schema.ts";
+import {z} from "zod";
+import {CodeBaseAgentConfigSchema, CodeBaseServiceConfigSchema} from "./schema.ts";
 import { CodeBaseState } from "./state/codeBaseState";
 
 export default class CodeBaseService implements TokenRingService {
@@ -18,8 +20,11 @@ export default class CodeBaseService implements TokenRingService {
   registerResource = this.resourceRegistry.register;
   getAvailableResources = this.resourceRegistry.getAllItemNames;
 
+  constructor(readonly options: z.output<typeof CodeBaseServiceConfigSchema>) {
+  }
+
   async attach(agent: Agent): Promise<void> {
-    const { enabledResources } = agent.getAgentConfigSlice('codebase', CodeBaseAgentConfigSchema);
+    const { enabledResources } = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice('codebase', CodeBaseAgentConfigSchema));
     // The enabled resources can include wildcards, so they need to be mapped to actual tool names with ensureItemNamesLike
     agent.initializeState(CodeBaseState, {
       enabledResources: enabledResources.map(resourceName => this.resourceRegistry.ensureItemNamesLike(resourceName)).flat()

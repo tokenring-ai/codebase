@@ -8,11 +8,11 @@ import contextHandlers from "./contextHandlers.ts";
 import FileTreeResource from "./FileTreeResource.ts";
 import packageJSON from "./package.json" with {type: "json"};
 import RepoMapResource from "./RepoMapResource.ts";
-import {CodeBaseConfigSchema} from "./schema.ts";
+import {CodeBaseServiceConfigSchema} from "./schema.ts";
 import WholeFileResource from "./WholeFileResource.ts";
 
 const packageConfigSchema = z.object({
-  codebase: CodeBaseConfigSchema.optional(),
+  codebase: CodeBaseServiceConfigSchema.optional(),
 });
 
 export default {
@@ -27,7 +27,7 @@ export default {
     app.waitForService(AgentCommandService, agentCommandService =>
       agentCommandService.addAgentCommands(chatCommands)
     );
-    const codebaseService = new CodeBaseService();
+    const codebaseService = new CodeBaseService(config.codebase);
     app.addServices(codebaseService);
 
     for (const name in config.codebase.resources) {
