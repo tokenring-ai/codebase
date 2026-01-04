@@ -23,7 +23,7 @@ export default class CodeBaseService implements TokenRingService {
   constructor(readonly options: z.output<typeof CodeBaseServiceConfigSchema>) {
   }
 
-  async attach(agent: Agent): Promise<void> {
+  attach(agent: Agent): void {
     const { enabledResources } = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice('codebase', CodeBaseAgentConfigSchema));
     // The enabled resources can include wildcards, so they need to be mapped to actual tool names with ensureItemNamesLike
     agent.initializeState(CodeBaseState, {
