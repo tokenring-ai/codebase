@@ -73,7 +73,7 @@ export default async function * getContextItems(input: string, chatConfig: ChatC
     }
 
     for await (const file of wholeFiles) {
-      const content = await fileSystem.getFile(file, agent);
+      const content = await fileSystem.readTextFile(file, agent);
       yield {
 
         role: "user",
