@@ -1,11 +1,11 @@
 import Agent from "@tokenring-ai/agent/Agent";
-import {ChatConfig, ContextItem} from "@tokenring-ai/chat/schema";
+import {ContextItem, ParsedChatConfig} from "@tokenring-ai/chat/schema";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import CodeBaseService from "../CodeBaseService.ts";
 import RepoMapResource from "../RepoMapResource.ts";
 import WholeFileResource from "../WholeFileResource.ts";
 
-export default async function * getContextItems(input: string, chatConfig: ChatConfig, params: {}, agent: Agent): AsyncGenerator<ContextItem> {
+export default async function* getContextItems(input: string, chatConfig: ParsedChatConfig, params: {}, agent: Agent): AsyncGenerator<ContextItem> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const fileSystem = agent.requireServiceByType(FileSystemService);
   const resources = codebaseService.getEnabledResources(agent);
