@@ -1,6 +1,7 @@
 import {Agent} from "@tokenring-ai/agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import createSubcommandRouter from "@tokenring-ai/agent/util/subcommandRouter";
+import numberedList from "@tokenring-ai/utility/string/numberedList";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import CodeBaseService from "../CodeBaseService.js";
 import RepoMapResource from "../RepoMapResource.ts";
@@ -39,7 +40,7 @@ async function selectResources(remainder: string, agent: Agent) {
 
   if (selectedResources && selectedResources.length > 0) {
     const enabledResources = codebaseService.setEnabledResources(selectedResources, agent);
-    agent.infoLine(
+    agent.infoMessage(
       `Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`,
     );
   }
@@ -53,7 +54,7 @@ async function enableResources(
   const resourcesToEnable = remainder.split(/\s+/).filter(Boolean);
 
   const enabledResources = codebaseService.enableResources(resourcesToEnable, agent);
-  agent.infoLine(`Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`)
+  agent.infoMessage(`Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`)
 }
 
 async function disableResources(
@@ -63,14 +64,14 @@ async function disableResources(
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const resourcesToDisable = remainder.split(/\s+/).filter(Boolean);
   const disabledResources = codebaseService.disableResources(resourcesToDisable, agent);
-  agent.infoLine(`Currently enabled codebase resources: ${Array.from(disabledResources).join(", ")}`)
+  agent.infoMessage(`Currently enabled codebase resources: ${Array.from(disabledResources).join(", ")}`)
 }
 
 async function setResources(remainder: string, agent: Agent) {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const resourcesToSet = remainder.split(/\s+/).filter(Boolean);
   const setResources = codebaseService.setEnabledResources(resourcesToSet, agent);
-  agent.infoLine(`Currently enabled codebase resources: ${Array.from(setResources).join(", ")}`)
+  agent.infoMessage(`Currently enabled codebase resources: ${Array.from(setResources).join(", ")}`)
 }
 
 async function listResources(remainder: string, agent: Agent) {
@@ -78,14 +79,15 @@ async function listResources(remainder: string, agent: Agent) {
   const activeResources = Array.from(codebaseService.getEnabledResourceNames(agent));
 
   if (activeResources.length === 0) {
-    agent.infoLine("No codebase resources are currently enabled.");
+    agent.infoMessage("No codebase resources are currently enabled.");
     return;
   }
 
-  agent.infoLine(`Enabled codebase resources:`);
-  activeResources.forEach((resource: string, index: number) => {
-    agent.infoLine(`  ${index + 1}. ${resource}`);
-  });
+  const lines: string[] = [
+    "Enabled codebase resources:",
+    numberedList(activeResources)
+  ];
+  agent.infoMessage(lines.join("\n"));
 }
 
 async function showRepoMap(remainder: string, agent: Agent) {
@@ -96,7 +98,7 @@ async function showRepoMap(remainder: string, agent: Agent) {
     .filter(resource => resource instanceof RepoMapResource);
 
   if (repoMaps.length === 0) {
-    agent.infoLine(
+    agent.infoMessage(
       "No RepoMap resources are currently enabled. Enable a RepoMap resource first.",
     );
     return;
@@ -117,12 +119,12 @@ async function showRepoMap(remainder: string, agent: Agent) {
 
     if (repoMap) {
       agent.chatOutput("Repository map:\n");
-      agent.infoLine(repoMap);
+      agent.infoMessage(repoMap);
       return;
     }
   }
 
-  agent.infoLine(
+  agent.infoMessage(
     "No repository map found. Ensure RepoMap resources are configured and enabled.",
   );
 }
