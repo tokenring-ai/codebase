@@ -1,8 +1,9 @@
 import {Agent} from "@tokenring-ai/agent";
+import type {TreeLeaf} from "@tokenring-ai/agent/question";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import createSubcommandRouter from "@tokenring-ai/agent/util/subcommandRouter";
-import numberedList from "@tokenring-ai/utility/string/numberedList";
 import {FileSystemService} from "@tokenring-ai/filesystem";
+import numberedList from "@tokenring-ai/utility/string/numberedList";
 import CodeBaseService from "../CodeBaseService.js";
 import RepoMapResource from "../RepoMapResource.ts";
 
@@ -27,19 +28,20 @@ async function selectResources(remainder: string, agent: Agent) {
   const activeResources = codebaseService.getEnabledResourceNames(agent);
   const sortedResources = availableResources.sort((a, b) => a.localeCompare(b));
 
-  const selectedResources: string[] | null = await agent.askHuman({
-    type: "askForMultipleTreeSelection",
-    title: "Codebase Resource Selection",
+  const selection = await agent.askQuestion({
     message: `Select resources to include in your chat context`,
-    tree: {
-      name: "Codebase Resource Selection",
-      children: buildResourceTree(sortedResources),
-    },
-    initialSelection: Array.from(activeResources),
+    question: {
+      type: 'treeSelect',
+      label: "Codebase Resource Selection",
+      key: "result",
+      defaultValue: Array.from(activeResources),
+      minimumSelections: 0,
+      tree: buildResourceTree(sortedResources),
+    }
   });
 
-  if (selectedResources && selectedResources.length > 0) {
-    const enabledResources = codebaseService.setEnabledResources(selectedResources, agent);
+  if (selection) {
+    const enabledResources = codebaseService.setEnabledResources(selection, agent);
     agent.infoMessage(
       `Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`,
     );
@@ -182,8 +184,8 @@ Manage codebase resources in your chat session. Resources include source code do
 - **Permission errors:** Check resource access permissions in your codebase
 `;
 
-function buildResourceTree(resourceNames: string[]) {
-  const children: any[] = [];
+function buildResourceTree(resourceNames: string[]) : TreeLeaf[] {
+  const children: TreeLeaf[] = [];
 
   for (const resourceName of resourceNames) {
     const segments = resourceName.split("/");
