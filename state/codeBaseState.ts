@@ -4,8 +4,13 @@ import type {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {z} from "zod";
 import {CodeBaseServiceConfigSchema} from "../schema.ts";
 
-export class CodeBaseState implements AgentStateSlice {
+const serializationSchema = z.object({
+  enabledResources: z.array(z.string()).default([])
+}).prefault({});
+
+export class CodeBaseState implements AgentStateSlice<typeof serializationSchema> {
   name = "CodeBaseState";
+  serializationSchema = serializationSchema;
   enabledResources = new Set<string>([]);
   constructor(readonly initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]) {
     for (const resource of initialConfig.enabledResources) {
@@ -22,14 +27,14 @@ export class CodeBaseState implements AgentStateSlice {
   reset(what: ResetWhat[]): void {
   }
 
-  serialize(): object {
+  serialize(): z.output<typeof serializationSchema> {
     return {
       enabledResources: Array.from(this.enabledResources)
     };
   }
 
-  deserialize(data: any): void {
-    this.enabledResources = new Set(data.enabledResources || []);
+  deserialize(data: z.output<typeof serializationSchema>): void {
+    this.enabledResources = new Set(data.enabledResources);
   }
 
   show(): string[] {
