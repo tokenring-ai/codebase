@@ -11,7 +11,7 @@ import {CodeBaseAgentConfigSchema, CodeBaseServiceConfigSchema} from "./schema.t
 import {CodeBaseState} from "./state/codeBaseState";
 
 export default class CodeBaseService implements TokenRingService {
-  name = "CodeBaseService";
+  readonly name = "CodeBaseService";
   description =
     "Manages codebase resources for providing file content and directory structure to AI context, allowing selective inclusion of project files and directories.";
   resourceRegistry =

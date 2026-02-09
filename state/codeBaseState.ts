@@ -9,7 +9,7 @@ const serializationSchema = z.object({
 }).prefault({});
 
 export class CodeBaseState implements AgentStateSlice<typeof serializationSchema> {
-  name = "CodeBaseState";
+  readonly name = "CodeBaseState";
   serializationSchema = serializationSchema;
   enabledResources = new Set<string>([]);
   constructor(readonly initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]) {
