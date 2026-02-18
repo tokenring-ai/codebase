@@ -8,7 +8,7 @@
     "@tokenring-ai/chat": "0.2.0",
     "@tokenring-ai/filesystem": "0.2.0",
     "@tokenring-ai/utility": "0.2.0",
-    "code-chopper": "^0.1.6",
+    "code-chopper": "^0.1.8",
     "zod": "^4.3.6"
   },
   "exports": {
