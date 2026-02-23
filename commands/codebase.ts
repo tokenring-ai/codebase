@@ -22,7 +22,7 @@ import RepoMapResource from "../RepoMapResource.ts";
 const description: string =
   "/codebase - Manage codebase resources (select, enable, disable, list, clear, repo-map).";
 
-async function selectResources(remainder: string, agent: Agent) {
+async function selectResources(remainder: string, agent: Agent): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const availableResources = codebaseService.getAvailableResources();
   const activeResources = codebaseService.getEnabledResourceNames(agent);
@@ -42,57 +42,56 @@ async function selectResources(remainder: string, agent: Agent) {
 
   if (selection) {
     const enabledResources = codebaseService.setEnabledResources(selection, agent);
-    agent.infoMessage(
-      `Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`,
-    );
+    return `Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`;
   }
+  
+  return "Resource selection cancelled.";
 }
 
 async function enableResources(
   remainder: string,
   agent: Agent
-) {
+): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const resourcesToEnable = remainder.split(/\s+/).filter(Boolean);
 
   const enabledResources = codebaseService.enableResources(resourcesToEnable, agent);
-  agent.infoMessage(`Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`)
+  return `Currently enabled codebase resources: ${Array.from(enabledResources).join(", ")}`
 }
 
 async function disableResources(
   remainder: string,
   agent: Agent
-) {
+): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const resourcesToDisable = remainder.split(/\s+/).filter(Boolean);
   const disabledResources = codebaseService.disableResources(resourcesToDisable, agent);
-  agent.infoMessage(`Currently enabled codebase resources: ${Array.from(disabledResources).join(", ")}`)
+  return `Currently enabled codebase resources: ${Array.from(disabledResources).join(", ")}`
 }
 
-async function setResources(remainder: string, agent: Agent) {
+async function setResources(remainder: string, agent: Agent): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const resourcesToSet = remainder.split(/\s+/).filter(Boolean);
   const setResources = codebaseService.setEnabledResources(resourcesToSet, agent);
-  agent.infoMessage(`Currently enabled codebase resources: ${Array.from(setResources).join(", ")}`)
+  return `Currently enabled codebase resources: ${Array.from(setResources).join(", ")}`
 }
 
-async function listResources(remainder: string, agent: Agent) {
+async function listResources(remainder: string, agent: Agent): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const activeResources = Array.from(codebaseService.getEnabledResourceNames(agent));
 
   if (activeResources.length === 0) {
-    agent.infoMessage("No codebase resources are currently enabled.");
-    return;
+    return "No codebase resources are currently enabled.";
   }
 
   const lines: string[] = [
     "Enabled codebase resources:",
     numberedList(activeResources)
   ];
-  agent.infoMessage(lines.join("\n"));
+  return lines.join("\n");
 }
 
-async function showRepoMap(remainder: string, agent: Agent) {
+async function showRepoMap(remainder: string, agent: Agent): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const fileSystem = agent.requireServiceByType(FileSystemService);
 
@@ -100,10 +99,7 @@ async function showRepoMap(remainder: string, agent: Agent) {
     .filter(resource => resource instanceof RepoMapResource);
 
   if (repoMaps.length === 0) {
-    agent.infoMessage(
-      "No RepoMap resources are currently enabled. Enable a RepoMap resource first.",
-    );
-    return;
+    return "No RepoMap resources are currently enabled. Enable a RepoMap resource first.";
   }
 
   const repoMapFiles = new Set<string>();
@@ -120,15 +116,11 @@ async function showRepoMap(remainder: string, agent: Agent) {
     );
 
     if (repoMap) {
-      agent.chatOutput("Repository map:\n");
-      agent.infoMessage(repoMap);
-      return;
+      return `Repository map:\n${repoMap}`;
     }
   }
 
-  agent.infoMessage(
-    "No repository map found. Ensure RepoMap resources are configured and enabled.",
-  );
+  return "No repository map found. Ensure RepoMap resources are configured and enabled.";
 }
 
 const execute = createSubcommandRouter({
@@ -165,7 +157,7 @@ Manage codebase resources in your chat session. Resources include source code do
 
 - \`/codebase select\` - Browse and select resources interactively
 - \`/codebase set src/docs\` - Set specific codebase resources by name
-- \`/codebase enable src\/\*\` - Enable all resources under src/ directory
+- \`/codebase enable src/\*\` - Enable all resources under src/ directory
 - \`/codebase enable api docs\` - Enable specific resources by name
 - \`/codebase disable src/\*\` - Disable specific resources by name
 - \`/codebase list\` - Show currently enabled resources
