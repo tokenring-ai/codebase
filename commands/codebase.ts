@@ -209,6 +209,7 @@ function buildResourceTree(resourceNames: string[]) : TreeLeaf[] {
 }
 
 export default {
+  name: "codebase",
   description,
   execute,
   help,

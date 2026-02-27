@@ -2,7 +2,7 @@ import {AgentCommandService} from "@tokenring-ai/agent";
 import {TokenRingPlugin} from "@tokenring-ai/app";
 import {ChatService} from "@tokenring-ai/chat";
 import {z} from "zod";
-import chatCommands from "./chatCommands.ts";
+import agentCommands from "./commands.ts";
 import CodeBaseService from "./CodeBaseService.ts";
 import contextHandlers from "./contextHandlers.ts";
 import FileTreeResource from "./FileTreeResource.ts";
@@ -25,7 +25,7 @@ export default {
       chatService.registerContextHandlers(contextHandlers);
     });
     app.waitForService(AgentCommandService, agentCommandService =>
-      agentCommandService.addAgentCommands(chatCommands)
+      agentCommandService.addAgentCommands(agentCommands)
     );
     const codebaseService = new CodeBaseService(config.codebase);
     app.addServices(codebaseService);
