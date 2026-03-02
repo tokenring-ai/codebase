@@ -7,9 +7,9 @@ The `@tokenring-ai/codebase` package provides a service for managing codebase re
 ### Key Features
 
 - **Multiple Resource Types**: File trees, repository maps, and whole file contents
-- **Interactive Management**: `/codebase` commands for resource selection and management (via AgentCommandService)
+- **Interactive Management**: `/codebase` commands for resource selection and management
 - **State Management**: Persistent resource enablement across agent sessions
-- **Wildcard Support**: Pattern matching for resource selection
+- **Wildcard Support**: Pattern matching for resource selection (e.g., `src/*`)
 - **Multi-language Support**: Automatic detection and mapping of file types
 - **Context Injection**: Automatic codebase context in chat sessions
 - **Symbol-Level Mapping**: Uses code-chopper to extract and document symbols from source files
@@ -122,9 +122,8 @@ Manage codebase resources in the chat session.
 | **select** | Interactive resource selection via tree view (recommended for exploring available resources) |
 | **enable** | Enable specific codebase resources by name<br>Example: `/codebase enable src/utils src/types` |
 | **disable** | Disable specific codebase resources<br>Example: `/codebase disable src/utils` |
-| **set** | Set specific codebase resources by name<br>Example: `/codebase set src/utils src/types` |
+| **set** | Set specific codebase resources by name (replaces current selection)<br>Example: `/codebase set src/utils src/types` |
 | **list** | List all currently enabled codebase resources |
-| **clear** | Remove all codebase resources from the session |
 | **show repo** | Display the currently enabled repository map and structure |
 
 **Examples:**
@@ -136,10 +135,6 @@ Manage codebase resources in the chat session.
 - `/codebase disable src/*` - Disable specific resources by name
 - `/codebase list` - Show currently enabled resources
 - `/codebase show repo` - View repository structure and symbols
-
-## Tools
-
-The package does not currently expose tools directly to the agent system.
 
 ## Services
 
@@ -219,10 +214,10 @@ formatFileOutput(
 - `getAvailableResources()`: Returns all registered resource names as an array
 - `getEnabledResourceNames(agent)`: Returns a Set of enabled resource names
 - `getEnabledResources(agent)`: Returns an array of enabled FileMatchResource instances
-- `setEnabledResources(resourceNames, agent)`: Sets enabled resources (returns Set<string>)
-- `enableResources(resourceNames, agent)`: Enables specific resources (returns Set<string>)
-- `disableResources(resourceNames, agent)`: Disables specific resources (returns Set<string>)
-- `generateRepoMap(files, fileSystem, agent)`: Generates repository map from files
+- `setEnabledResources(resourceNames, agent)`: Sets enabled resources (replaces current selection, returns Set<string>)
+- `enableResources(resourceNames, agent)`: Enables specific resources (adds to current selection, returns Set<string>)
+- `disableResources(resourceNames, agent)`: Disables specific resources (removes from current selection, returns Set<string>)
+- `generateRepoMap(files, fileSystem, agent)`: Generates repository map from files using code-chopper
 - `getLanguageFromExtension(ext)`: Maps file extensions to language types
 - `formatFileOutput(filePath, chunks)`: Formats repository map entries from chunks
 
@@ -304,13 +299,7 @@ The package does not currently define any RPC endpoints.
 
 ## State Management
 
-State is managed through state properties stored in the agent:
-
-The service uses `agent.initializeState()` and `agent.getState()` to manage enabled resources as a `Set<string>`:
-
-- **CodeBaseState.enabledResources**: Set of currently enabled resource names
-
-**State Implementation:**
+State is managed through the `CodeBaseState` class stored in the agent:
 
 ```typescript
 export class CodeBaseState implements AgentStateSlice<typeof serializationSchema> {
@@ -318,33 +307,32 @@ export class CodeBaseState implements AgentStateSlice<typeof serializationSchema
   serializationSchema = serializationSchema;
   enabledResources = new Set<string>([]);
   
-  // Constructor takes initialConfig with enabledResources array
   constructor(readonly initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]);
   
-  // State transfer from parent agent
   transferStateFromParent(parent: Agent): void;
-  
-  // State reset functionality
   reset(what: ResetWhat[]): void;
-  
-  // Serialization/deserialization for persistence
   serialize(): z.output<typeof serializationSchema>;
   deserialize(data: z.output<typeof serializationSchema>): void;
-  
-  // UI representation
   show(): string[];
 }
 ```
 
-**State Initialization:**
+**State Schema:**
 
 ```typescript
-constructor(
-  initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]
-)
+const serializationSchema = z.object({
+  enabledResources: z.array(z.string()).default([])
+}).prefault({});
 ```
 
-The enabled resource names can include wildcards which are mapped to actual tool names via `ensureItemNamesLike()` during agent attachment.
+**State Features:**
+
+- **enabledResources**: Set of currently enabled resource names
+- **State Transfer**: Resources are transferred from parent agents when cloning
+- **Serialization**: Resources are serialized as an array for persistence
+- **UI Representation**: `show()` method returns human-readable list of enabled resources
+
+The enabled resource names can include wildcards which are mapped to actual resource names via `ensureItemNamesLike()` during agent attachment.
 
 ## Context Handlers
 
@@ -361,52 +349,52 @@ The main context handler provides automatic context injection to agents:
 ```typescript
 import codebaseContext from "@tokenring-ai/codebase/contextHandlers/codebaseContext";
 
-export default async function* getContextItems(
-  input: string,
-  chatConfig: ParsedChatConfig,
-  params: {},
-  agent: Agent
-): AsyncGenerator<ContextItem>
+export default async function* getContextItems({
+  agent
+}: ContextHandlerOptions): AsyncGenerator<ContextItem>
 ```
 
 **Context Generation:**
 
-The context handler generates three types of context items:
+The context handler generates three types of context items in order:
 
 1. **File Tree**: Directory structure of enabled file tree resources
    - Only includes resources that are NOT instances of `WholeFileResource` or `RepoMapResource`
    - Uses `addFilesToSet()` to collect file paths
+   - Yields a single context item with sorted file paths
 
 2. **Repo Map**: Symbol-level documentation from enabled repo map resources
    - Only includes resources that are instances of `RepoMapResource`
    - Uses `code-chopper` to parse files and extract symbols
    - Generates human-readable symbol documentation
+   - Yields a single context item with the repository map
 
 3. **Whole Files**: Complete file contents from enabled whole file resources
    - Only includes resources that are instances of `WholeFileResource`
    - Reads full file contents and includes them in context
+   - Yields one context item per file
 
-The context is yielded in stages, first file trees, then repo maps, then whole files, allowing the agent to process them in a logical order.
-
-## State Management
-
-State is managed through state properties stored in the agent:
-
-The service uses `agent.initializeState()` and `agent.getState()` to manage enabled resources as a `Set<string>`:
-
-- **enabledResources**: Set of currently enabled resource names
-
-State is automatically initialized when an agent attaches to the service with resource configuration merged from defaults and agent-specific config.
-
-**State Initialization:**
+**Example Context Items:**
 
 ```typescript
-constructor(
-  initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]
-)
-```
+// File tree context item
+{
+  role: "user",
+  content: `// Directory Tree of project files:\nsrc/index.ts\nsrc/utils.ts`
+}
 
-The enabled resource names can include wildcards which are mapped to actual tool names via `ensureItemNamesLike()` during agent attachment.
+// Repo map context item
+{
+  role: "user",
+  content: `// These are snippets of the symbols in the project...\nsrc/index.ts:\n- export function main()`
+}
+
+// Whole file context item
+{
+  role: "user",
+  content: `// Complete contents of file: src/index.ts\nimport ...`
+}
+```
 
 ## Usage Examples
 
@@ -479,22 +467,22 @@ The service automatically detects file types and generates appropriate repositor
 
 ```typescript
 // Supported language mappings
-getLanguageFromExtension(".js")   // "javascript"
-getLanguageFromExtension(".ts")   // "typescript"
-getLanguageFromExtension(".tsx")  // "typescript"
-getLanguageFromExtension(".py")   // "python"
-getLanguageFromExtension(".h")    // "c"
-getLanguageFromExtension(".c")    // "c"
-getLanguageFromExtension(".hxx")  // "cpp"
-getLanguageFromExtension(".cxx")  // "cpp"
-getLanguageFromExtension(".hpp")  // "cpp"
-getLanguageFromExtension(".cpp")  // "cpp"
-getLanguageFromExtension(".rs")   // "rust"
-getLanguageFromExtension(".go")   // "go"
-getLanguageFromExtension(".java") // "java"
-getLanguageFromExtension(".rb")   // "ruby"
-getLanguageFromExtension(".sh")   // "bash"
-getLanguageFromExtension(".bash") // "bash"
+codebaseService.getLanguageFromExtension(".js")   // "javascript"
+codebaseService.getLanguageFromExtension(".ts")   // "typescript"
+codebaseService.getLanguageFromExtension(".tsx")  // "typescript"
+codebaseService.getLanguageFromExtension(".py")   // "python"
+codebaseService.getLanguageFromExtension(".h")    // "c"
+codebaseService.getLanguageFromExtension(".c")    // "c"
+codebaseService.getLanguageFromExtension(".hxx")  // "cpp"
+codebaseService.getLanguageFromExtension(".cxx")  // "cpp"
+codebaseService.getLanguageFromExtension(".hpp")  // "cpp"
+codebaseService.getLanguageFromExtension(".cpp")  // "cpp"
+codebaseService.getLanguageFromExtension(".rs")   // "rust"
+codebaseService.getLanguageFromExtension(".go")   // "go"
+codebaseService.getLanguageFromExtension(".java") // "java"
+codebaseService.getLanguageFromExtension(".rb")   // "ruby"
+codebaseService.getLanguageFromExtension(".sh")   // "bash"
+codebaseService.getLanguageFromExtension(".bash") // "bash"
 ```
 
 ### Managing Resources
@@ -508,13 +496,13 @@ const names = codebaseService.getEnabledResourceNames(agent);
 // Get enabled resource instances
 const resources = codebaseService.getEnabledResources(agent);
 
-// Set enabled resources (mutates state)
+// Set enabled resources (mutates state, replaces current selection)
 const updated = codebaseService.setEnabledResources(["src", "api"], agent);
 
-// Enable resources (mutates state)
+// Enable resources (mutates state, adds to current selection)
 const added = codebaseService.enableResources(["doc"], agent);
 
-// Disable resources (mutates state)
+// Disable resources (mutates state, removes from current selection)
 const removed = codebaseService.disableResources(["src"], agent);
 ```
 
@@ -532,6 +520,44 @@ await agent.executeChatCommand("/codebase list");
 
 // Show repository map
 await agent.executeChatCommand("/codebase show repo");
+```
+
+### Interactive Resource Selection
+
+The `/codebase select` command uses a tree view for interactive selection:
+
+```typescript
+// The buildResourceTree function organizes resources by category
+import { buildResourceTree } from "@tokenring-ai/codebase/commands/codebase/buildResourceTree";
+
+const resources = ["src/utils", "src/types", "api/handlers", "docs/readme"];
+const tree = buildResourceTree(resources);
+
+// Result:
+[
+  {
+    name: "src",
+    value: "src/*",
+    children: [
+      { name: "utils", value: "src/utils" },
+      { name: "types", value: "src/types" }
+    ]
+  },
+  {
+    name: "api",
+    value: "api/*",
+    children: [
+      { name: "handlers", value: "api/handlers" }
+    ]
+  },
+  {
+    name: "docs",
+    value: "docs/*",
+    children: [
+      { name: "readme", value: "docs/readme" }
+    ]
+  }
+]
 ```
 
 ## Plugin Architecture
@@ -556,7 +582,7 @@ Resources are registered with the service and automatically managed through agen
 
 ```typescript
 // Plugin installs the service and resources
-app.install(plug, {
+app.install(plugin, {
   codebase: {
     resources: {
       name: { type: "fileTree" | "repoMap" | "wholeFile" }
@@ -574,22 +600,29 @@ service.attach(agent);
 ```
 pkg/codebase/
 ├── commands/
-│   └── codebase.ts          # Agent command implementation
+│   └── codebase/
+│       ├── buildResourceTree.ts   # Tree building for interactive selection
+│       ├── disable.ts             # /codebase disable command
+│       ├── enable.ts              # /codebase enable command
+│       ├── list.ts                # /codebase list command
+│       ├── select.ts              # /codebase select command
+│       ├── set.ts                 # /codebase set command
+│       └── showRepo.ts            # /codebase show repo command
 ├── contextHandlers/
-│   └── codebaseContext.ts   # Context handler for chat integration
+│   └── codebaseContext.ts        # Context handler for chat integration
 ├── state/
-│   └── codeBaseState.ts     # Agent state management
-├── CodeBaseService.ts       # Main service implementation
-├── FileTreeResource.ts      # File tree resource provider
-├── RepoMapResource.ts       # Repository map resource provider
-├── WholeFileResource.ts     # Whole file resource provider
-├── chatCommands.ts          # Chat command exports (barrel)
-├── contextHandlers.ts       # Context handler exports (barrel)
-├── plugin.ts                # Plugin registration and installation
-├── index.ts                 # Public API exports
-├── schema.ts                # Configuration schemas
-├── package.json             # Package metadata
-└── README.md                # This file
+│   └── codeBaseState.ts          # Agent state management
+├── CodeBaseService.ts            # Main service implementation
+├── FileTreeResource.ts           # File tree resource provider
+├── RepoMapResource.ts            # Repository map resource provider
+├── WholeFileResource.ts          # Whole file resource provider
+├── commands.ts                   # Chat command exports (barrel)
+├── contextHandlers.ts            # Context handler exports (barrel)
+├── plugin.ts                     # Plugin registration and installation
+├── index.ts                      # Public API exports
+├── schema.ts                     # Configuration schemas
+├── package.json                  # Package metadata
+└── README.md                     # This file
 ```
 
 ## Dependencies
