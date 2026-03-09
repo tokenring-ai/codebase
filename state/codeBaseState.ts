@@ -1,6 +1,5 @@
 import {Agent} from "@tokenring-ai/agent";
-import type {ResetWhat} from "@tokenring-ai/agent/AgentEvents";
-import type {AgentStateSlice} from "@tokenring-ai/agent/types";
+import {AgentStateSlice} from "@tokenring-ai/agent/types";
 import {z} from "zod";
 import {CodeBaseServiceConfigSchema} from "../schema.ts";
 
@@ -8,23 +7,19 @@ const serializationSchema = z.object({
   enabledResources: z.array(z.string()).default([])
 }).prefault({});
 
-export class CodeBaseState implements AgentStateSlice<typeof serializationSchema> {
-  readonly name = "CodeBaseState";
-  serializationSchema = serializationSchema;
-  enabledResources = new Set<string>([]);
+export class CodeBaseState extends AgentStateSlice<typeof serializationSchema> {
+  enabledResources: Set<string>;
   constructor(readonly initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]) {
-    for (const resource of initialConfig.enabledResources) {
-      this.enabledResources.add(resource);
-    }
+    super("CodeBaseState", serializationSchema);
+    this.enabledResources = new Set(initialConfig.enabledResources);
   }
 
   transferStateFromParent(parent: Agent): void {
-    for (const resource of parent.getState(CodeBaseState).enabledResources) {
-      this.enabledResources.add(resource);
-    }
+    this.enabledResources = new Set(parent.getState(CodeBaseState).enabledResources);
   }
 
-  reset(what: ResetWhat[]): void {
+  reset(): void {
+    this.enabledResources = new Set(this.initialConfig.enabledResources);
   }
 
   serialize(): z.output<typeof serializationSchema> {
