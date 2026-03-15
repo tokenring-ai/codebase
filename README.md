@@ -115,16 +115,17 @@ Manage codebase resources in the chat session.
 
 **Usage:** `/codebase [action] [resources...]`
 
-**Available Actions:**
+**Available Commands:**
 
-| Action | Description |
-|--------|-------------|
-| **select** | Interactive resource selection via tree view (recommended for exploring available resources) |
+| Command | Description |
+|---------|-------------|
+| **select** | Interactive resource selection via tree view (recommended for exploring available resources)<br>Example: `/codebase select` |
 | **enable** | Enable specific codebase resources by name<br>Example: `/codebase enable src/utils src/types` |
 | **disable** | Disable specific codebase resources<br>Example: `/codebase disable src/utils` |
 | **set** | Set specific codebase resources by name (replaces current selection)<br>Example: `/codebase set src/utils src/types` |
-| **list** | List all currently enabled codebase resources |
-| **show repo** | Display the currently enabled repository map and structure |
+| **reset** | Reset enabled codebase resources to the initial configuration<br>Example: `/codebase reset` |
+| **list** | List all currently enabled codebase resources<br>Example: `/codebase list` |
+| **show repo** | Display the currently enabled repository map and structure<br>Example: `/codebase show repo` |
 
 **Examples:**
 
@@ -134,6 +135,7 @@ Manage codebase resources in the chat session.
 - `/codebase enable api docs` - Enable specific resources by name
 - `/codebase disable src/*` - Disable specific resources by name
 - `/codebase list` - Show currently enabled resources
+- `/codebase reset` - Reset to initial configuration
 - `/codebase show repo` - View repository structure and symbols
 
 ## Services
@@ -152,7 +154,7 @@ const codebaseService = new CodeBaseService(options);
 
 - `name`: Service identifier ("CodeBaseService")
 - `description`: Service description
-- `resourceRegistry`: Registry managing all FileMatchResource instances (readonly)
+- `resourceRegistry`: Registry managing all FileMatchResource instances
 - `options`: Service configuration options
 
 **Resource Management Methods:**
@@ -295,7 +297,7 @@ const wholeFileResource = new WholeFileResource(config);
 
 ## RPC Endpoints
 
-The package does not currently define any RPC endpoints.
+The package does not define any RPC endpoints.
 
 ## State Management
 
@@ -305,12 +307,12 @@ State is managed through the `CodeBaseState` class stored in the agent:
 export class CodeBaseState implements AgentStateSlice<typeof serializationSchema> {
   readonly name = "CodeBaseState";
   serializationSchema = serializationSchema;
-  enabledResources = new Set<string>([]);
+  enabledResources: Set<string>;
   
   constructor(readonly initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]);
   
   transferStateFromParent(parent: Agent): void;
-  reset(what: ResetWhat[]): void;
+  reset(): void;
   serialize(): z.output<typeof serializationSchema>;
   deserialize(data: z.output<typeof serializationSchema>): void;
   show(): string[];
@@ -328,11 +330,20 @@ const serializationSchema = z.object({
 **State Features:**
 
 - **enabledResources**: Set of currently enabled resource names
-- **State Transfer**: Resources are transferred from parent agents when cloning
+- **State Transfer**: Resources are transferred from parent agents when cloning via `transferStateFromParent()`
 - **Serialization**: Resources are serialized as an array for persistence
+- **Reset**: Resources can be reset to initial configuration via `reset()`
 - **UI Representation**: `show()` method returns human-readable list of enabled resources
 
 The enabled resource names can include wildcards which are mapped to actual resource names via `ensureItemNamesLike()` during agent attachment.
+
+**State Methods:**
+
+- `transferStateFromParent(parent)`: Transfers enabled resources from a parent agent when cloning
+- `reset()`: Resets enabled resources to the initial configuration
+- `serialize()`: Serializes the state for persistence
+- `deserialize(data)`: Deserializes state from persisted data
+- `show()`: Returns a human-readable list of enabled resources
 
 ## Context Handlers
 
@@ -518,6 +529,9 @@ await agent.executeChatCommand("/codebase enable src docs");
 // List currently enabled resources
 await agent.executeChatCommand("/codebase list");
 
+// Reset to initial configuration
+await agent.executeChatCommand("/codebase reset");
+
 // Show repository map
 await agent.executeChatCommand("/codebase show repo");
 ```
@@ -605,6 +619,7 @@ pkg/codebase/
 │       ├── disable.ts             # /codebase disable command
 │       ├── enable.ts              # /codebase enable command
 │       ├── list.ts                # /codebase list command
+│       ├── reset.ts               # /codebase reset command
 │       ├── select.ts              # /codebase select command
 │       ├── set.ts                 # /codebase set command
 │       └── showRepo.ts            # /codebase show repo command
