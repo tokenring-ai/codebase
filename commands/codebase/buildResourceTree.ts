@@ -13,7 +13,6 @@ export function buildResourceTree(resourceNames: string[]): TreeLeaf[] {
 
   return Object.keys(categories).sort().map(category => ({
     name: `${category}`,
-    value: `${category}/*`,
     children: categories[category].map(item => ({
       name: `${item.displayName}`,
       value: item.resourceName
