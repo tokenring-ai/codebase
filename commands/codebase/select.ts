@@ -1,9 +1,13 @@
-import {Agent} from "@tokenring-ai/agent";
-import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import CodeBaseService from "../../CodeBaseService.js";
 import {buildResourceTree} from "./buildResourceTree.ts";
 
-async function execute(remainder: string, agent: Agent): Promise<string> {
+const inputSchema = {
+  args: {},
+  allowAttachments: false,
+} as const satisfies AgentCommandInputSchema;
+
+async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const sortedResources = codebaseService.getAvailableResources().sort((a, b) => a.localeCompare(b));
 
@@ -27,10 +31,15 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
 }
 
 export default {
-  name: "codebase select", description: "Interactive resource selection", help: `# /codebase select
+  name: "codebase select", 
+  description: "Interactive resource selection", 
+  inputSchema,
+  execute,
+  help: `# /codebase select
 
 Open an interactive tree view to browse and select codebase resources. Recommended when unsure of exact resource names.
 
 ## Example
 
-/codebase select`, execute } satisfies TokenRingAgentCommand;
+/codebase select`,
+} satisfies TokenRingAgentCommand<typeof inputSchema>;

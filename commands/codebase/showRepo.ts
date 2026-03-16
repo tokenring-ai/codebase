@@ -1,10 +1,14 @@
-import {Agent} from "@tokenring-ai/agent";
-import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import CodeBaseService from "../../CodeBaseService.js";
 import RepoMapResource from "../../RepoMapResource.ts";
 
-async function execute(_remainder: string, agent: Agent): Promise<string> {
+const inputSchema = {
+  args: {},
+  allowAttachments: false,
+} as const satisfies AgentCommandInputSchema;
+
+async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const repoMaps = Object.values(codebaseService.getEnabledResources(agent))
     .filter(r => r instanceof RepoMapResource);
@@ -25,10 +29,15 @@ async function execute(_remainder: string, agent: Agent): Promise<string> {
 }
 
 export default {
-  name: "codebase show repo", description: "Display the repository map", help: `# /codebase show repo
+  name: "codebase show repo", 
+  description: "Display the repository map", 
+  inputSchema,
+  execute,
+  help: `# /codebase show repo
 
 Display the currently enabled repository map and structure. Requires RepoMap resources to be enabled first.
 
 ## Example
 
-/codebase show repo`, execute } satisfies TokenRingAgentCommand;
+/codebase show repo`,
+} satisfies TokenRingAgentCommand<typeof inputSchema>;
