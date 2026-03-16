@@ -26,7 +26,8 @@ async function execute(remainder: string, agent: Agent): Promise<string> {
   return "Resource selection cancelled.";
 }
 
-export default { name: "codebase select", description: "/codebase select - Interactive resource selection", help: `# /codebase select
+export default {
+  name: "codebase select", description: "Interactive resource selection", help: `# /codebase select
 
 Open an interactive tree view to browse and select codebase resources. Recommended when unsure of exact resource names.
 

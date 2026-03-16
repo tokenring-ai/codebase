@@ -4,7 +4,7 @@ import CodeBaseService from "../../CodeBaseService.js";
 
 export default {
   name: "codebase disable",
-  description: "/codebase disable - Disable codebase resources",
+  description: "Disable codebase resources",
   help: `# /codebase disable <resource...>
 
 Disable one or more codebase resources by name.

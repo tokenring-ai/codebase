@@ -24,7 +24,8 @@ async function execute(_remainder: string, agent: Agent): Promise<string> {
   return "No repository map found. Ensure RepoMap resources are configured and enabled.";
 }
 
-export default { name: "codebase show repo", description: "/codebase show repo - Display the repository map", help: `# /codebase show repo
+export default {
+  name: "codebase show repo", description: "Display the repository map", help: `# /codebase show repo
 
 Display the currently enabled repository map and structure. Requires RepoMap resources to be enabled first.
 

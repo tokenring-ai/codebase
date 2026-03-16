@@ -1,11 +1,10 @@
 import {Agent} from "@tokenring-ai/agent";
 import {TokenRingAgentCommand} from "@tokenring-ai/agent/types";
-import CodeBaseService from "../../CodeBaseService.js";
 import {CodeBaseState} from "../../state/codeBaseState.ts";
 
 export default {
   name: "codebase reset",
-  description: "/codebase reset - Reset enabled codebase resources",
+  description: "Reset enabled codebase resources",
   help: `# /codebase reset
 
 Reset the enabled codebase resources to the initial configuration.

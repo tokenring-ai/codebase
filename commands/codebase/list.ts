@@ -5,7 +5,7 @@ import CodeBaseService from "../../CodeBaseService.js";
 
 export default {
   name: "codebase list",
-  description: "/codebase list - List enabled codebase resources",
+  description: "List enabled codebase resources",
   help: `# /codebase list
 
 List all currently enabled codebase resources.

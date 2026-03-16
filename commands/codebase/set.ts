@@ -4,7 +4,7 @@ import CodeBaseService from "../../CodeBaseService.js";
 
 export default {
   name: "codebase set",
-  description: "/codebase set - Set enabled codebase resources",
+  description: "Set enabled codebase resources",
   help: `# /codebase set <resource...>
 
 Set the enabled codebase resources, replacing the current selection.
