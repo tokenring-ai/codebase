@@ -1,10 +1,7 @@
 import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
 import {CodeBaseState} from "../../state/codeBaseState.ts";
 
-const inputSchema = {
-  args: {},
-  allowAttachments: false,
-} as const satisfies AgentCommandInputSchema;
+const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
 async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const enabled = agent.mutateState(CodeBaseState, state => {
@@ -19,9 +16,7 @@ export default {
   description: "Reset enabled codebase resources",
   inputSchema,
   execute,
-  help: `# /codebase reset
-
-Reset the enabled codebase resources to the initial configuration.
+  help: `Reset the enabled codebase resources to the initial configuration.
 
 ## Example
 

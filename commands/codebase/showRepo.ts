@@ -3,10 +3,7 @@ import {FileSystemService} from "@tokenring-ai/filesystem";
 import CodeBaseService from "../../CodeBaseService.js";
 import RepoMapResource from "../../RepoMapResource.ts";
 
-const inputSchema = {
-  args: {},
-  allowAttachments: false,
-} as const satisfies AgentCommandInputSchema;
+const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
 async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
@@ -33,9 +30,7 @@ export default {
   description: "Display the repository map", 
   inputSchema,
   execute,
-  help: `# /codebase show repo
-
-Display the currently enabled repository map and structure. Requires RepoMap resources to be enabled first.
+  help: `Display the currently enabled repository map and structure. Requires RepoMap resources to be enabled first.
 
 ## Example
 

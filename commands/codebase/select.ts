@@ -2,10 +2,7 @@ import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} f
 import CodeBaseService from "../../CodeBaseService.js";
 import {buildResourceTree} from "./buildResourceTree.ts";
 
-const inputSchema = {
-  args: {},
-  allowAttachments: false,
-} as const satisfies AgentCommandInputSchema;
+const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
 async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
@@ -35,9 +32,7 @@ export default {
   description: "Interactive resource selection", 
   inputSchema,
   execute,
-  help: `# /codebase select
-
-Open an interactive tree view to browse and select codebase resources. Recommended when unsure of exact resource names.
+  help: `Open an interactive tree view to browse and select codebase resources. Recommended when unsure of exact resource names.
 
 ## Example
 

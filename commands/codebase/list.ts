@@ -2,10 +2,7 @@ import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} f
 import numberedList from "@tokenring-ai/utility/string/numberedList";
 import CodeBaseService from "../../CodeBaseService.js";
 
-const inputSchema = {
-  args: {},
-  allowAttachments: false,
-} as const satisfies AgentCommandInputSchema;
+const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
 async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const active = Array.from(agent.requireServiceByType(CodeBaseService).getEnabledResourceNames(agent));
@@ -18,9 +15,7 @@ export default {
   description: "List enabled codebase resources",
   inputSchema,
   execute,
-  help: `# /codebase list
-
-List all currently enabled codebase resources.
+  help: `List all currently enabled codebase resources.
 
 ## Example
 
