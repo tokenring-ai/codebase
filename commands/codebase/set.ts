@@ -3,19 +3,15 @@ import CodeBaseService from "../../CodeBaseService.js";
 
 const inputSchema = {
   args: {},
-  positionals: [
-    {
-      name: "resources",
-      description: "Space-separated resource names to set as enabled",
-      required: true,
-      greedy: true
-    },
-  ],
-  allowAttachments: false,
+  remainder: {
+    name: "resources",
+    description: "Space-separated resource names to set as enabled",
+    required: true,
+  }
 } as const satisfies AgentCommandInputSchema;
 
-async function execute({positionals: {resources}, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
-  const resourceList = resources.split(/\s+/)
+async function execute({remainder, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+  const resourceList = remainder.split(/\s+/)
   const enabled = agent.requireServiceByType(CodeBaseService).setEnabledResources(resourceList, agent);
   return `Currently enabled codebase resources: ${Array.from(enabled).join(", ")}`;
 }
