@@ -10,9 +10,9 @@ The `@tokenring-ai/codebase` package provides a service for managing codebase re
 - **Interactive Management**: `/codebase` commands for resource selection and management
 - **State Management**: Persistent resource enablement across agent sessions
 - **Wildcard Support**: Pattern matching for resource selection (e.g., `src/*`)
-- **Multi-language Support**: Automatic detection and mapping of file types
+- **Multi-language Repository Mapping**: Automatic detection and symbol extraction for 15+ programming languages
 - **Context Injection**: Automatic codebase context in chat sessions
-- **Symbol-Level Mapping**: Uses code-chopper to extract and document symbols from source files
+- **Symbol-Level Repository Mapping**: Uses code-chopper to parse source files and extract symbol definitions for repository map generation
 
 ## Installation
 
@@ -71,13 +71,13 @@ import { z } from "zod";
 export const CodeBaseAgentConfigSchema = z
   .object({
     enabledResources: z.array(z.string()).optional()
-  }).default({});
+  }).default({ enabledResources: [] });
 
 export const CodeBaseServiceConfigSchema = z
   .object({
     resources: z.record(z.string(), z.any()),
     agentDefaults: z.object({
-        enabledResources: z.array(z.string()).default([])
+      enabledResources: z.array(z.string()).default([])
     }).default({ enabledResources: [] })
   });
 ```
@@ -160,31 +160,32 @@ const codebaseService = new CodeBaseService(options);
 **Resource Management Methods:**
 
 ```typescript
-registerResource(
-  name: string,
-  resource: FileMatchResource
-): void
-
+// Returns all registered resource names
 getAvailableResources(): string[]
 
+// Returns the names of currently enabled resources
 getEnabledResourceNames(
   agent: Agent
 ): Set<string>
 
+// Returns the currently enabled FileMatchResource instances
 getEnabledResources(
   agent: Agent
 ): FileMatchResource[]
 
+// Sets enabled resources (replaces current selection)
 setEnabledResources(
   resourceNames: string[],
   agent: Agent
 ): Set<string>
 
+// Enables specific resources (adds to current selection)
 enableResources(
   resourceNames: string[],
   agent: Agent
 ): Set<string>
 
+// Disables specific resources (removes from current selection)
 disableResources(
   resourceNames: string[],
   agent: Agent
@@ -194,16 +195,19 @@ disableResources(
 **Repository Mapping Methods:**
 
 ```typescript
+// Generates repository map from files using code-chopper
 async generateRepoMap(
   files: Set<string>,
   fileSystem: FileSystemService,
   agent: Agent
 ): Promise<string | null>
 
+// Maps file extension to language type for code-chopper
 getLanguageFromExtension(
   ext: string
 ): LanguageEnum | null
 
+// Formats repository map output from code chunks
 formatFileOutput(
   filePath: string,
   chunks: any[]
@@ -212,16 +216,16 @@ formatFileOutput(
 
 **Method Descriptions:**
 
-- `registerResource(name, resource)`: Registers a new resource with the service
-- `getAvailableResources()`: Returns all registered resource names as an array
-- `getEnabledResourceNames(agent)`: Returns a Set of enabled resource names
+- `registerResource(name, resource)`: Registers a new resource with the service's internal KeyedRegistry
+- `getAvailableResources()`: Returns all registered resource names as a sorted array
+- `getEnabledResourceNames(agent)`: Returns a Set of currently enabled resource names from agent state
 - `getEnabledResources(agent)`: Returns an array of enabled FileMatchResource instances
-- `setEnabledResources(resourceNames, agent)`: Sets enabled resources (replaces current selection, returns Set<string>)
-- `enableResources(resourceNames, agent)`: Enables specific resources (adds to current selection, returns Set<string>)
-- `disableResources(resourceNames, agent)`: Disables specific resources (removes from current selection, returns Set<string>)
-- `generateRepoMap(files, fileSystem, agent)`: Generates repository map from files using code-chopper
-- `getLanguageFromExtension(ext)`: Maps file extensions to language types
-- `formatFileOutput(filePath, chunks)`: Formats repository map entries from chunks
+- `setEnabledResources(resourceNames, agent)`: Sets enabled resources, replacing current selection; handles wildcards via ensureItemNamesLike()
+- `enableResources(resourceNames, agent)`: Enables specific resources, adding to current selection; handles wildcards
+- `disableResources(resourceNames, agent)`: Disables specific resources, removing from current selection; handles wildcards
+- `generateRepoMap(files, fileSystem, agent)`: Generates repository map by parsing files with code-chopper and extracting symbols
+- `getLanguageFromExtension(ext)`: Maps file extensions to code-chopper language types (supports 15+ languages)
+- `formatFileOutput(filePath, chunks)`: Formats repository map entries by extracting first line from each chunk
 
 **Service Interface:**
 
@@ -245,11 +249,11 @@ The result determines which resources are enabled for that agent. The service us
 
 ## Providers
 
-The package includes three resource types that extend FileMatchResource from @tokenring-ai/filesystem:
+The package includes three resource types that extend `FileMatchResource` from `@tokenring-ai/filesystem`. These resources are registered with the `CodeBaseService` and can be enabled/disabled via agent state or chat commands.
 
 ### FileTreeResource
 
-Extends `FileMatchResource`. Provides directory structure context.
+Extends `FileMatchResource`. Provides directory structure and file tree context for enabled resources. When enabled, includes a list of file paths in the agent's context.
 
 ```typescript
 import FileTreeResource from "@tokenring-ai/codebase/FileTreeResource";
@@ -262,10 +266,11 @@ const fileTreeResource = new FileTreeResource(config);
 - `name`: Resource identifier ("FileTreeService")
 - `description`: Resource description ("Provides FileTree functionality")
 - Extends `FileMatchResource` from `@tokenring-ai/filesystem`
+- **Usage**: Provides directory tree of matching files in context
 
 ### RepoMapResource
 
-Extends `FileMatchResource`. Provides symbol-level repository mapping using code-chopper.
+Extends `FileMatchResource`. Provides symbol-level repository mapping using code-chopper. When enabled, parses source files and extracts symbol definitions to create a repository map.
 
 ```typescript
 import RepoMapResource from "@tokenring-ai/codebase/RepoMapResource";
@@ -278,10 +283,12 @@ const repoMapResource = new RepoMapResource(config);
 - `name`: Resource identifier ("RepoMapResource")
 - `description`: Resource description ("Provides RepoMap functionality")
 - Extends `FileMatchResource` from `@tokenring-ai/filesystem`
+- **Usage**: Provides symbol-level documentation of code structure
+- **Processing**: Uses code-chopper to parse and extract symbols from source files
 
 ### WholeFileResource
 
-Extends `FileMatchResource`. Provides complete file contents to agent context.
+Extends `FileMatchResource`. Provides complete file contents to agent context. When enabled, includes full file contents in the agent's context.
 
 ```typescript
 import WholeFileResource from "@tokenring-ai/codebase/WholeFileResource";
@@ -294,6 +301,7 @@ const wholeFileResource = new WholeFileResource(config);
 - `name`: Resource identifier ("WholeFileResource")
 - `description`: Resource description ("Provides whole files to include in the chat context")
 - Extends `FileMatchResource` from `@tokenring-ai/filesystem`
+- **Usage**: Includes complete file contents in context
 
 ## RPC Endpoints
 
@@ -301,15 +309,22 @@ The package does not define any RPC endpoints.
 
 ## State Management
 
-State is managed through the `CodeBaseState` class stored in the agent:
+State is managed through the `CodeBaseState` class which extends `AgentStateSlice`. The state is stored in the agent and persists across sessions.
 
 ```typescript
-export class CodeBaseState implements AgentStateSlice<typeof serializationSchema> {
+import { AgentStateSlice } from "@tokenring-ai/agent/types";
+import { z } from "zod";
+
+const serializationSchema = z.object({
+  enabledResources: z.array(z.string()).default([])
+}).prefault({});
+
+export class CodeBaseState extends AgentStateSlice<typeof serializationSchema> {
   readonly name = "CodeBaseState";
   serializationSchema = serializationSchema;
   enabledResources: Set<string>;
-  
-  constructor(readonly initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"]);
+
+  constructor(readonly initialConfig: z.output<typeof CodeBaseServiceConfigSchema>["agentDefaults"])
   
   transferStateFromParent(parent: Agent): void;
   reset(): void;
@@ -329,40 +344,41 @@ const serializationSchema = z.object({
 
 **State Features:**
 
-- **enabledResources**: Set of currently enabled resource names
+- **enabledResources**: Set of currently enabled resource names (converted from array during construction)
 - **State Transfer**: Resources are transferred from parent agents when cloning via `transferStateFromParent()`
 - **Serialization**: Resources are serialized as an array for persistence
 - **Reset**: Resources can be reset to initial configuration via `reset()`
 - **UI Representation**: `show()` method returns human-readable list of enabled resources
 
-The enabled resource names can include wildcards which are mapped to actual resource names via `ensureItemNamesLike()` during agent attachment.
+The enabled resource names are stored as a Set internally but serialized as an array. During agent attachment, resource names can include wildcards which are mapped to actual resource names via `ensureItemNamesLike()` from the resource registry.
 
 **State Methods:**
 
+- `constructor(initialConfig)`: Initializes state with enabledResources from initialConfig, converting array to Set
 - `transferStateFromParent(parent)`: Transfers enabled resources from a parent agent when cloning
 - `reset()`: Resets enabled resources to the initial configuration
-- `serialize()`: Serializes the state for persistence
-- `deserialize(data)`: Deserializes state from persisted data
+- `serialize()`: Serializes the state for persistence, converting Set to array
+- `deserialize(data)`: Deserializes state from persisted data, converting array to Set
 - `show()`: Returns a human-readable list of enabled resources
 
 ## Context Handlers
 
-The package provides context handlers for integrating with the chat system:
+The package provides context handlers for integrating with the chat system. The context handler is registered with the `ChatService` during plugin installation.
 
 ```typescript
-import { codebaseContext } from "@tokenring-ai/codebase/contextHandlers";
+import contextHandlers from "@tokenring-ai/codebase/contextHandlers";
 ```
 
 ### codebase-context
 
-The main context handler provides automatic context injection to agents:
+The main context handler provides automatic context injection to agents by generating context items based on currently enabled resources:
 
 ```typescript
 import codebaseContext from "@tokenring-ai/codebase/contextHandlers/codebaseContext";
 
-export default async function* getContextItems({
-  agent
-}: ContextHandlerOptions): AsyncGenerator<ContextItem>
+export default async function* getContextItems(
+  { agent }: ContextHandlerOptions
+): AsyncGenerator<ContextItem>
 ```
 
 **Context Generation:**
@@ -370,20 +386,20 @@ export default async function* getContextItems({
 The context handler generates three types of context items in order:
 
 1. **File Tree**: Directory structure of enabled file tree resources
-   - Only includes resources that are NOT instances of `WholeFileResource` or `RepoMapResource`
-   - Uses `addFilesToSet()` to collect file paths
+   - Includes resources that are NOT instances of `WholeFileResource` or `RepoMapResource`
+   - Uses `addFilesToSet()` to collect file paths from each resource
    - Yields a single context item with sorted file paths
 
 2. **Repo Map**: Symbol-level documentation from enabled repo map resources
-   - Only includes resources that are instances of `RepoMapResource`
-   - Uses `code-chopper` to parse files and extract symbols
-   - Generates human-readable symbol documentation
+   - Includes only resources that are instances of `RepoMapResource`
+   - Uses `code-chopper` to parse files and extract symbol definitions
+   - Generates human-readable symbol documentation with file paths
    - Yields a single context item with the repository map
 
 3. **Whole Files**: Complete file contents from enabled whole file resources
-   - Only includes resources that are instances of `WholeFileResource`
-   - Reads full file contents and includes them in context
-   - Yields one context item per file
+   - Includes only resources that are instances of `WholeFileResource`
+   - Reads full file contents via `FileSystemService`
+   - Yields one context item per file with complete contents
 
 **Example Context Items:**
 
@@ -397,13 +413,13 @@ The context handler generates three types of context items in order:
 // Repo map context item
 {
   role: "user",
-  content: `// These are snippets of the symbols in the project...\nsrc/index.ts:\n- export function main()`
+  content: `// These are snippets of the symbols in the project. This DOES NOT contain the full file contents...\nsrc/index.ts:\n- export function main()`
 }
 
 // Whole file context item
 {
   role: "user",
-  content: `// Complete contents of file: src/index.ts\nimport ...`
+  content: `// Complete contents of file: src/index.ts\nimport { Agent } from "@tokenring-ai/agent";\n...`
 }
 ```
 
@@ -538,10 +554,11 @@ await agent.executeChatCommand("/codebase show repo");
 
 ### Interactive Resource Selection
 
-The `/codebase select` command uses a tree view for interactive selection:
+The `/codebase select` command uses a tree view for interactive selection. The `buildResourceTree` function organizes resources by category:
 
 ```typescript
 // The buildResourceTree function organizes resources by category
+// Resources are grouped by their path prefix (everything before the last slash)
 import { buildResourceTree } from "@tokenring-ai/codebase/commands/codebase/buildResourceTree";
 
 const resources = ["src/utils", "src/types", "api/handlers", "docs/readme"];
@@ -551,7 +568,6 @@ const tree = buildResourceTree(resources);
 [
   {
     name: "src",
-    value: "src/*",
     children: [
       { name: "utils", value: "src/utils" },
       { name: "types", value: "src/types" }
@@ -559,19 +575,22 @@ const tree = buildResourceTree(resources);
   },
   {
     name: "api",
-    value: "api/*",
     children: [
       { name: "handlers", value: "api/handlers" }
     ]
   },
   {
     name: "docs",
-    value: "docs/*",
     children: [
       { name: "readme", value: "docs/readme" }
     ]
   }
 ]
+
+// Resources without a path prefix are grouped under "Unknown"
+const resources2 = ["utils", "types", "api/handlers"];
+const tree2 = buildResourceTree(resources2);
+// Result includes "Unknown" category for "utils" and "types""
 ```
 
 ## Plugin Architecture
@@ -637,6 +656,8 @@ pkg/codebase/
 ├── index.ts                      # Public API exports
 ├── schema.ts                     # Configuration schemas
 ├── package.json                  # Package metadata
+├── vitest.config.ts             # Test configuration
+├── LICENSE                       # License file
 └── README.md                     # This file
 ```
 
@@ -644,13 +665,20 @@ pkg/codebase/
 
 This package depends on:
 
-- `@tokenring-ai/agent` - Central orchestration system
-- `@tokenring-ai/app` - Base application framework
-- `@tokenring-ai/chat` - Chat service and context handlers
-- `@tokenring-ai/filesystem` - File system operations (`FileMatchResource`)
-- `@tokenring-ai/utility` - Shared utilities (`KeyedRegistry`, `deepMerge`, etc.)
-- `code-chopper` - Code parsing and symbol extraction
-- `zod` - Schema validation
+### Runtime Dependencies
+
+- `@tokenring-ai/agent` (0.2.0) - Central orchestration system for agent management
+- `@tokenring-ai/app` (0.2.0) - Base application framework with plugin architecture
+- `@tokenring-ai/chat` (0.2.0) - Chat service and context handlers
+- `@tokenring-ai/filesystem` (0.2.0) - File system operations and FileMatchResource base class
+- `@tokenring-ai/utility` (0.2.0) - Shared utilities including KeyedRegistry and deepMerge
+- `code-chopper` (^0.1.8) - Code parsing and symbol extraction library
+- `zod` (^4.3.6) - Schema validation and type inference
+
+### Dev Dependencies
+
+- `vitest` (^4.1.1) - Testing framework
+- `typescript` (^6.0.2) - TypeScript compiler
 
 ## Development
 

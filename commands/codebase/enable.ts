@@ -1,5 +1,5 @@
 import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
-import CodeBaseService from "../../CodeBaseService.js";
+import CodeBaseService from "../../CodeBaseService.ts";
 
 const inputSchema = {
   args: {},
@@ -11,7 +11,7 @@ const inputSchema = {
 } as const satisfies AgentCommandInputSchema;
 
 async function execute({remainder, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
-  const resourceList = remainder.split(/\s+/)
+  const resourceList = remainder.split(/\s+/);
   const enabled = agent.requireServiceByType(CodeBaseService).enableResources(resourceList, agent);
   return `Currently enabled codebase resources: ${Array.from(enabled).join(", ")}`;
 }
