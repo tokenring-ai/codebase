@@ -1,6 +1,6 @@
 {
   "name": "@tokenring-ai/codebase",
-  "description": "Codebase service",
+  "description": "Injects repository structure and file maps into the agent's reasoning context.",
   "version": "0.2.0",
   "dependencies": {
     "@tokenring-ai/agent": "0.2.0",
