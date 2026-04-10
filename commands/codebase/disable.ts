@@ -1,4 +1,4 @@
-import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand,} from "@tokenring-ai/agent/types";
 import CodeBaseService from "../../CodeBaseService.ts";
 
 const inputSchema = {
@@ -7,12 +7,17 @@ const inputSchema = {
     name: "resources",
     description: "Space-separated resource names to disable",
     required: true,
-  }
+  },
 } as const satisfies AgentCommandInputSchema;
 
-async function execute({remainder, agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+function execute({
+                   remainder,
+                   agent,
+                 }: AgentCommandInputType<typeof inputSchema>): string {
   const resourceList = remainder.split(/\s+/);
-  const enabled = agent.requireServiceByType(CodeBaseService).disableResources(resourceList, agent);
+  const enabled = agent
+    .requireServiceByType(CodeBaseService)
+    .disableResources(resourceList, agent);
   return `Currently enabled codebase resources: ${Array.from(enabled).join(", ")}`;
 }
 

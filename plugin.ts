@@ -1,5 +1,5 @@
 import {AgentCommandService} from "@tokenring-ai/agent";
-import {TokenRingPlugin} from "@tokenring-ai/app";
+import type {TokenRingPlugin} from "@tokenring-ai/app";
 import {ChatService} from "@tokenring-ai/chat";
 import {z} from "zod";
 import CodeBaseService from "./CodeBaseService.ts";
@@ -21,12 +21,12 @@ export default {
   version: packageJSON.version,
   description: packageJSON.description,
   install(app, config) {
-    if (! config.codebase) return;
-    app.waitForService(ChatService, chatService => {
+    if (!config.codebase) return;
+    app.waitForService(ChatService, (chatService) => {
       chatService.registerContextHandlers(contextHandlers);
     });
-    app.waitForService(AgentCommandService, agentCommandService =>
-      agentCommandService.addAgentCommands(agentCommands)
+    app.waitForService(AgentCommandService, (agentCommandService) =>
+      agentCommandService.addAgentCommands(agentCommands),
     );
     const codebaseService = new CodeBaseService(config.codebase);
     app.addServices(codebaseService);
@@ -55,5 +55,5 @@ export default {
       }
     }
   },
-  config: packageConfigSchema
+  config: packageConfigSchema,
 } satisfies TokenRingPlugin<typeof packageConfigSchema>;

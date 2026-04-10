@@ -1,12 +1,17 @@
-import {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand,} from "@tokenring-ai/agent/types";
 import numberedList from "@tokenring-ai/utility/string/numberedList";
 import CodeBaseService from "../../CodeBaseService.ts";
 
 const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
-async function execute({agent}: AgentCommandInputType<typeof inputSchema>): Promise<string> {
-  const active = Array.from(agent.requireServiceByType(CodeBaseService).getEnabledResourceNames(agent));
-  if (active.length === 0) return "No codebase resources are currently enabled.";
+function execute({
+                   agent,
+                 }: AgentCommandInputType<typeof inputSchema>): string {
+  const active = Array.from(
+    agent.requireServiceByType(CodeBaseService).getEnabledResourceNames(agent),
+  );
+  if (active.length === 0)
+    return "No codebase resources are currently enabled.";
   return `Enabled codebase resources:\n${numberedList(active)}`;
 }
 

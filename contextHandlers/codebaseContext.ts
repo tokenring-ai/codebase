@@ -1,10 +1,12 @@
-import {type ContextHandlerOptions, ContextItem} from "@tokenring-ai/chat/schema";
+import type {ContextHandlerOptions, ContextItem,} from "@tokenring-ai/chat/schema";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import CodeBaseService from "../CodeBaseService.ts";
 import RepoMapResource from "../RepoMapResource.ts";
 import WholeFileResource from "../WholeFileResource.ts";
 
-export default async function* getContextItems({agent}: ContextHandlerOptions): AsyncGenerator<ContextItem> {
+export default async function* getContextItems({
+                                                 agent,
+                                               }: ContextHandlerOptions): AsyncGenerator<ContextItem> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const fileSystem = agent.requireServiceByType(FileSystemService);
   const resources = codebaseService.getEnabledResources(agent);
@@ -24,7 +26,6 @@ export default async function* getContextItems({agent}: ContextHandlerOptions): 
 
     if (fileTreeFiles.size > 0) {
       yield {
-
         role: "user",
         content: `// Directory Tree of project files:\n${Array.from(
           fileTreeFiles,
@@ -53,7 +54,6 @@ export default async function* getContextItems({agent}: ContextHandlerOptions): 
       );
       if (repoMap) {
         yield {
-
           role: "user",
           content: repoMap,
         };
@@ -74,7 +74,6 @@ export default async function* getContextItems({agent}: ContextHandlerOptions): 
     for await (const file of wholeFiles) {
       const content = await fileSystem.readTextFile(file, agent);
       yield {
-
         role: "user",
         content: `// Complete contents of file: ${file}\n${content}`,
       };
