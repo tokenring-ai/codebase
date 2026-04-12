@@ -1,4 +1,4 @@
-import type {ContextHandlerOptions, ContextItem,} from "@tokenring-ai/chat/schema";
+import type {ContextHandlerOptions, ContextItem} from "@tokenring-ai/chat/schema";
 import {FileSystemService} from "@tokenring-ai/filesystem";
 import CodeBaseService from "../CodeBaseService.ts";
 import RepoMapResource from "../RepoMapResource.ts";

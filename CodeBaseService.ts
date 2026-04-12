@@ -4,10 +4,10 @@ import type {FileSystemService} from "@tokenring-ai/filesystem";
 import type FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
 import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
-import {createParserFactory, type LanguageEnum, parseCodeAndChunk,} from "code-chopper";
+import {createParserFactory, type LanguageEnum, parseCodeAndChunk} from "code-chopper";
 import path from "node:path";
 import type {z} from "zod";
-import {CodeBaseAgentConfigSchema, type CodeBaseServiceConfigSchema,} from "./schema.ts";
+import {CodeBaseAgentConfigSchema, type CodeBaseServiceConfigSchema} from "./schema.ts";
 import {CodeBaseState} from "./state/codeBaseState";
 
 export default class CodeBaseService implements TokenRingService {
