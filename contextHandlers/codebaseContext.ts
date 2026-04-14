@@ -14,8 +14,7 @@ export default async function* getContextItems({
   // File tree
   {
     const fileTreeFiles = new Set<string>();
-    for (const name in resources) {
-      const resource = resources[name];
+    for (const resource of resources) {
       if (
         !(resource instanceof WholeFileResource) &&
         !(resource instanceof RepoMapResource)
@@ -39,8 +38,7 @@ export default async function* getContextItems({
   // Repo map
   {
     const repoMapFiles = new Set<string>();
-    for (const name in resources) {
-      const resource = resources[name];
+    for (const resource of resources) {
       if (resource instanceof RepoMapResource) {
         await resource.addFilesToSet(repoMapFiles, agent);
       }
@@ -64,14 +62,13 @@ export default async function* getContextItems({
   // Whole files
   {
     const wholeFiles = new Set<string>();
-    for (const name in resources) {
-      const resource = resources[name];
+    for (const resource of resources) {
       if (resource instanceof WholeFileResource) {
         await resource.addFilesToSet(wholeFiles, agent);
       }
     }
 
-    for await (const file of wholeFiles) {
+    for (const file of wholeFiles) {
       const content = await fileSystem.readTextFile(file, agent);
       yield {
         role: "user",

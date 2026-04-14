@@ -108,7 +108,7 @@ export default class CodeBaseService implements TokenRingService {
         });
         const formattedOutput = this.formatFileOutput(file, chunks);
         if (formattedOutput) repoMap.push(formattedOutput);
-      } catch (error) {
+      } catch (error: unknown) {
         agent.errorMessage(
           `[CodeBaseService] Error processing file ${file}:`,
           error as Error,
