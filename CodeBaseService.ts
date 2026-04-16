@@ -16,8 +16,8 @@ export default class CodeBaseService implements TokenRingService {
     "Manages codebase resources for providing file content and directory structure to AI context, allowing selective inclusion of project files and directories.";
   resourceRegistry = new KeyedRegistry<FileMatchResource>();
 
-  registerResource = this.resourceRegistry.register;
-  getAvailableResources = this.resourceRegistry.getAllItemNames;
+  registerResource = this.resourceRegistry.set;
+  getAvailableResources = this.resourceRegistry.keysArray;
 
   constructor(readonly options: z.output<typeof CodeBaseServiceConfigSchema>) {
   }
@@ -31,7 +31,7 @@ export default class CodeBaseService implements TokenRingService {
     agent.initializeState(CodeBaseState, {
       enabledResources: enabledResources
         .flatMap((resourceName) =>
-          this.resourceRegistry.ensureItemNamesLike(resourceName),
+          this.resourceRegistry.requireKeysLike(resourceName),
         ),
     });
   }
@@ -42,14 +42,14 @@ export default class CodeBaseService implements TokenRingService {
 
   getEnabledResources(agent: Agent): FileMatchResource[] {
     return Array.from(agent.getState(CodeBaseState).enabledResources).map((r) =>
-      this.resourceRegistry.requireItemByName(r),
+      this.resourceRegistry.require(r),
     );
   }
 
   setEnabledResources(resourceNames: string[], agent: Agent): Set<string> {
     const matchedResourceNames = resourceNames
       .flatMap((resourceName) =>
-        this.resourceRegistry.ensureItemNamesLike(resourceName),
+        this.resourceRegistry.requireKeysLike(resourceName),
       );
 
     return agent.mutateState(CodeBaseState, (state) => {
@@ -61,7 +61,7 @@ export default class CodeBaseService implements TokenRingService {
   enableResources(resourceNames: string[], agent: Agent): Set<string> {
     const matchedResourceNames = resourceNames
       .flatMap((resourceName) =>
-        this.resourceRegistry.ensureItemNamesLike(resourceName),
+        this.resourceRegistry.requireKeysLike(resourceName),
       );
 
     return agent.mutateState(CodeBaseState, (state) => {
@@ -75,7 +75,7 @@ export default class CodeBaseService implements TokenRingService {
   disableResources(resourceNames: string[], agent: Agent): Set<string> {
     const matchedResourceNames = resourceNames
       .flatMap((resourceName) =>
-        this.resourceRegistry.ensureItemNamesLike(resourceName),
+        this.resourceRegistry.requireKeysLike(resourceName),
       );
 
     return agent.mutateState(CodeBaseState, (state) => {
