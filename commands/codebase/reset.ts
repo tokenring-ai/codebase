@@ -1,12 +1,10 @@
-import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
-import {CodeBaseState} from "../../state/codeBaseState.ts";
+import type { AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand } from "@tokenring-ai/agent/types";
+import { CodeBaseState } from "../../state/codeBaseState.ts";
 
 const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
-function execute({
-                   agent,
-                 }: AgentCommandInputType<typeof inputSchema>): string {
-  const enabled = agent.mutateState(CodeBaseState, (state) => {
+function execute({ agent }: AgentCommandInputType<typeof inputSchema>): string {
+  const enabled = agent.mutateState(CodeBaseState, state => {
     state.reset();
     return state.enabledResources;
   });

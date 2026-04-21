@@ -1,4 +1,4 @@
-import type {ContextHandler} from "@tokenring-ai/chat/schema";
+import type { ContextHandler } from "@tokenring-ai/chat/schema";
 import codebaseContext from "./contextHandlers/codebaseContext.ts";
 
 export default {

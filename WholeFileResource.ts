@@ -1,4 +1,4 @@
-import {FileMatchResource} from "@tokenring-ai/filesystem";
+import { FileMatchResource } from "@tokenring-ai/filesystem";
 
 /**
  * Class representing a resource that yields whole files.

@@ -1,20 +1,15 @@
-import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
-import {FileSystemService} from "@tokenring-ai/filesystem";
+import type { AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand } from "@tokenring-ai/agent/types";
+import { FileSystemService } from "@tokenring-ai/filesystem";
 import CodeBaseService from "../../CodeBaseService.ts";
 import RepoMapResource from "../../RepoMapResource.ts";
 
 const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
-async function execute({
-                         agent,
-                       }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+async function execute({ agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
-  const repoMaps = Object.values(
-    codebaseService.getEnabledResources(agent),
-  ).filter((r) => r instanceof RepoMapResource);
+  const repoMaps = Object.values(codebaseService.getEnabledResources(agent)).filter(r => r instanceof RepoMapResource);
 
-  if (repoMaps.length === 0)
-    return "No RepoMap resources are currently enabled. Enable a RepoMap resource first.";
+  if (repoMaps.length === 0) return "No RepoMap resources are currently enabled. Enable a RepoMap resource first.";
 
   const repoMapFiles = new Set<string>();
   for (const resource of repoMaps) {
@@ -22,11 +17,7 @@ async function execute({
   }
 
   if (repoMapFiles.size > 0) {
-    const repoMap = await codebaseService.generateRepoMap(
-      repoMapFiles,
-      agent.requireServiceByType(FileSystemService),
-      agent,
-    );
+    const repoMap = await codebaseService.generateRepoMap(repoMapFiles, agent.requireServiceByType(FileSystemService), agent);
     if (repoMap) return `Repository map:\n${repoMap}`;
   }
 

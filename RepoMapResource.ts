@@ -1,4 +1,4 @@
-import {FileMatchResource} from "@tokenring-ai/filesystem";
+import { FileMatchResource } from "@tokenring-ai/filesystem";
 
 export default class RepoMapResource extends FileMatchResource {
   readonly name = "RepoMapResource";

@@ -1,14 +1,14 @@
-import type {Agent} from "@tokenring-ai/agent";
-import type {TokenRingService} from "@tokenring-ai/app/types";
-import type {FileSystemService} from "@tokenring-ai/filesystem";
+import path from "node:path";
+import type { Agent } from "@tokenring-ai/agent";
+import type { TokenRingService } from "@tokenring-ai/app/types";
+import type { FileSystemService } from "@tokenring-ai/filesystem";
 import type FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
 import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
-import {createParserFactory, type LanguageEnum, parseCodeAndChunk} from "code-chopper";
-import path from "node:path";
-import type {z} from "zod";
-import {CodeBaseAgentConfigSchema, type CodeBaseServiceConfigSchema} from "./schema.ts";
-import {CodeBaseState} from "./state/codeBaseState";
+import { createParserFactory, type LanguageEnum, parseCodeAndChunk } from "code-chopper";
+import type { z } from "zod";
+import { CodeBaseAgentConfigSchema, type CodeBaseServiceConfigSchema } from "./schema.ts";
+import { CodeBaseState } from "./state/codeBaseState";
 
 export default class CodeBaseService implements TokenRingService {
   readonly name = "CodeBaseService";
@@ -19,20 +19,13 @@ export default class CodeBaseService implements TokenRingService {
   registerResource = this.resourceRegistry.set;
   getAvailableResources = this.resourceRegistry.keysArray;
 
-  constructor(readonly options: z.output<typeof CodeBaseServiceConfigSchema>) {
-  }
+  constructor(readonly options: z.output<typeof CodeBaseServiceConfigSchema>) {}
 
   attach(agent: Agent): void {
-    const {enabledResources} = deepMerge(
-      this.options.agentDefaults,
-      agent.getAgentConfigSlice("codebase", CodeBaseAgentConfigSchema),
-    );
+    const { enabledResources } = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice("codebase", CodeBaseAgentConfigSchema));
     // The enabled resources can include wildcards, so they need to be mapped to actual tool names with ensureItemNamesLike
     agent.initializeState(CodeBaseState, {
-      enabledResources: enabledResources
-        .flatMap((resourceName) =>
-          this.resourceRegistry.requireKeysLike(resourceName),
-        ),
+      enabledResources: enabledResources.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName)),
     });
   }
 
@@ -41,30 +34,22 @@ export default class CodeBaseService implements TokenRingService {
   }
 
   getEnabledResources(agent: Agent): FileMatchResource[] {
-    return Array.from(agent.getState(CodeBaseState).enabledResources).map((r) =>
-      this.resourceRegistry.require(r),
-    );
+    return Array.from(agent.getState(CodeBaseState).enabledResources).map(r => this.resourceRegistry.require(r));
   }
 
   setEnabledResources(resourceNames: string[], agent: Agent): Set<string> {
-    const matchedResourceNames = resourceNames
-      .flatMap((resourceName) =>
-        this.resourceRegistry.requireKeysLike(resourceName),
-      );
+    const matchedResourceNames = resourceNames.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName));
 
-    return agent.mutateState(CodeBaseState, (state) => {
+    return agent.mutateState(CodeBaseState, state => {
       state.enabledResources = new Set(matchedResourceNames);
       return state.enabledResources;
     });
   }
 
   enableResources(resourceNames: string[], agent: Agent): Set<string> {
-    const matchedResourceNames = resourceNames
-      .flatMap((resourceName) =>
-        this.resourceRegistry.requireKeysLike(resourceName),
-      );
+    const matchedResourceNames = resourceNames.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName));
 
-    return agent.mutateState(CodeBaseState, (state) => {
+    return agent.mutateState(CodeBaseState, state => {
       for (const resourceName of matchedResourceNames) {
         state.enabledResources.add(resourceName);
       }
@@ -73,12 +58,9 @@ export default class CodeBaseService implements TokenRingService {
   }
 
   disableResources(resourceNames: string[], agent: Agent): Set<string> {
-    const matchedResourceNames = resourceNames
-      .flatMap((resourceName) =>
-        this.resourceRegistry.requireKeysLike(resourceName),
-      );
+    const matchedResourceNames = resourceNames.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName));
 
-    return agent.mutateState(CodeBaseState, (state) => {
+    return agent.mutateState(CodeBaseState, state => {
       for (const resourceName of matchedResourceNames) {
         state.enabledResources.delete(resourceName);
       }
@@ -86,11 +68,7 @@ export default class CodeBaseService implements TokenRingService {
     });
   }
 
-  async generateRepoMap(
-    files: Set<string>,
-    fileSystem: FileSystemService,
-    agent: Agent,
-  ): Promise<string | null> {
+  async generateRepoMap(files: Set<string>, fileSystem: FileSystemService, agent: Agent): Promise<string | null> {
     const factory = createParserFactory();
     const repoMap: string[] = [];
 
@@ -109,10 +87,7 @@ export default class CodeBaseService implements TokenRingService {
         const formattedOutput = this.formatFileOutput(file, chunks);
         if (formattedOutput) repoMap.push(formattedOutput);
       } catch (error: unknown) {
-        agent.errorMessage(
-          `[CodeBaseService] Error processing file ${file}:`,
-          error as Error,
-        );
+        agent.errorMessage(`[CodeBaseService] Error processing file ${file}:`, error as Error);
       }
     }
 

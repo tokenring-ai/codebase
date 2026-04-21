@@ -1,12 +1,10 @@
-import type {ContextHandlerOptions, ContextItem} from "@tokenring-ai/chat/schema";
-import {FileSystemService} from "@tokenring-ai/filesystem";
+import type { ContextHandlerOptions, ContextItem } from "@tokenring-ai/chat/schema";
+import { FileSystemService } from "@tokenring-ai/filesystem";
 import CodeBaseService from "../CodeBaseService.ts";
 import RepoMapResource from "../RepoMapResource.ts";
 import WholeFileResource from "../WholeFileResource.ts";
 
-export default async function* getContextItems({
-                                                 agent,
-                                               }: ContextHandlerOptions): AsyncGenerator<ContextItem> {
+export default async function* getContextItems({ agent }: ContextHandlerOptions): AsyncGenerator<ContextItem> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
   const fileSystem = agent.requireServiceByType(FileSystemService);
   const resources = codebaseService.getEnabledResources(agent);
@@ -15,10 +13,7 @@ export default async function* getContextItems({
   {
     const fileTreeFiles = new Set<string>();
     for (const resource of resources) {
-      if (
-        !(resource instanceof WholeFileResource) &&
-        !(resource instanceof RepoMapResource)
-      ) {
+      if (!(resource instanceof WholeFileResource) && !(resource instanceof RepoMapResource)) {
         await resource.addFilesToSet(fileTreeFiles, agent);
       }
     }
@@ -26,11 +21,7 @@ export default async function* getContextItems({
     if (fileTreeFiles.size > 0) {
       yield {
         role: "user",
-        content: `// Directory Tree of project files:\n${Array.from(
-          fileTreeFiles,
-        )
-          .sort()
-          .join("\n")}`,
+        content: `// Directory Tree of project files:\n${Array.from(fileTreeFiles).sort().join("\n")}`,
       };
     }
   }
@@ -45,11 +36,7 @@ export default async function* getContextItems({
     }
 
     if (repoMapFiles.size > 0) {
-      const repoMap = await codebaseService.generateRepoMap(
-        repoMapFiles,
-        fileSystem,
-        agent,
-      );
+      const repoMap = await codebaseService.generateRepoMap(repoMapFiles, fileSystem, agent);
       if (repoMap) {
         yield {
           role: "user",

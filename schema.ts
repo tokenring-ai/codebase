@@ -1,8 +1,8 @@
-import {z} from "zod";
+import { z } from "zod";
 
 export const CodeBaseAgentConfigSchema = z
   .object({
-    enabledResources: z.array(z.string()).optional(),
+    enabledResources: z.array(z.string()).exactOptional(),
   })
   .default({});
 
@@ -12,5 +12,5 @@ export const CodeBaseServiceConfigSchema = z.object({
     .object({
       enabledResources: z.array(z.string()).default([]),
     })
-    .default({enabledResources: []}),
+    .default({ enabledResources: [] }),
 });

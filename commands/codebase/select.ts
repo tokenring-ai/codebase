@@ -1,16 +1,12 @@
-import type {AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand} from "@tokenring-ai/agent/types";
+import type { AgentCommandInputSchema, AgentCommandInputType, TokenRingAgentCommand } from "@tokenring-ai/agent/types";
 import CodeBaseService from "../../CodeBaseService.ts";
-import {buildResourceTree} from "./buildResourceTree.ts";
+import { buildResourceTree } from "./buildResourceTree.ts";
 
 const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
-async function execute({
-                         agent,
-                       }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
+async function execute({ agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
   const codebaseService = agent.requireServiceByType(CodeBaseService);
-  const sortedResources = codebaseService
-    .getAvailableResources()
-    .sort((a, b) => a.localeCompare(b));
+  const sortedResources = codebaseService.getAvailableResources().sort((a, b) => a.localeCompare(b));
 
   const selection = await agent.askQuestion({
     message: `Select resources to include in your chat context`,

@@ -1,18 +1,18 @@
-import {AgentCommandService} from "@tokenring-ai/agent";
-import type {TokenRingPlugin} from "@tokenring-ai/app";
-import {ChatService} from "@tokenring-ai/chat";
-import {z} from "zod";
+import { AgentCommandService } from "@tokenring-ai/agent";
+import type { TokenRingPlugin } from "@tokenring-ai/app";
+import { ChatService } from "@tokenring-ai/chat";
+import { z } from "zod";
 import CodeBaseService from "./CodeBaseService.ts";
 import agentCommands from "./commands.ts";
 import contextHandlers from "./contextHandlers.ts";
 import FileTreeResource from "./FileTreeResource.ts";
-import packageJSON from "./package.json" with {type: "json"};
+import packageJSON from "./package.json" with { type: "json" };
 import RepoMapResource from "./RepoMapResource.ts";
-import {CodeBaseServiceConfigSchema} from "./schema.ts";
+import { CodeBaseServiceConfigSchema } from "./schema.ts";
 import WholeFileResource from "./WholeFileResource.ts";
 
 const packageConfigSchema = z.object({
-  codebase: CodeBaseServiceConfigSchema.optional(),
+  codebase: CodeBaseServiceConfigSchema.exactOptional(),
 });
 
 export default {
@@ -22,12 +22,10 @@ export default {
   description: packageJSON.description,
   install(app, config) {
     if (!config.codebase) return;
-    app.waitForService(ChatService, (chatService) => {
+    app.waitForService(ChatService, chatService => {
       chatService.registerContextHandlers(contextHandlers);
     });
-    app.waitForService(AgentCommandService, (agentCommandService) =>
-      agentCommandService.addAgentCommands(agentCommands),
-    );
+    app.waitForService(AgentCommandService, agentCommandService => agentCommandService.addAgentCommands(agentCommands));
     const codebaseService = new CodeBaseService(config.codebase);
     app.addServices(codebaseService);
 
@@ -35,22 +33,13 @@ export default {
       const resourceConfig = config.codebase.resources[name];
       switch (resourceConfig.type) {
         case "fileTree":
-          codebaseService.registerResource(
-            name,
-            new FileTreeResource(resourceConfig),
-          );
+          codebaseService.registerResource(name, new FileTreeResource(resourceConfig));
           break;
         case "repoMap":
-          codebaseService.registerResource(
-            name,
-            new RepoMapResource(resourceConfig),
-          );
+          codebaseService.registerResource(name, new RepoMapResource(resourceConfig));
           break;
         case "wholeFile":
-          codebaseService.registerResource(
-            name,
-            new WholeFileResource(resourceConfig),
-          );
+          codebaseService.registerResource(name, new WholeFileResource(resourceConfig));
           break;
       }
     }
