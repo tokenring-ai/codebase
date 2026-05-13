@@ -522,23 +522,26 @@ export default async function* getContextItems(
 The context handler generates three types of context items in order:
 
 1. **File Tree**: Directory structure of enabled file tree resources
- - Includes resources that are NOT instances of `WholeFileResource` or
-   `RepoMapResource`
- - Uses `addFilesToSet()` from each resource to collect matching file paths
- - Yields a single context item with sorted file paths
+
+- Includes resources that are NOT instances of `WholeFileResource` or
+  `RepoMapResource`
+- Uses `addFilesToSet()` from each resource to collect matching file paths
+- Yields a single context item with sorted file paths
 
 2. **Repo Map**: Symbol-level documentation from enabled repo map resources
- - Includes only resources that are instances of `RepoMapResource`
- - Collects file paths via `addFilesToSet()` then calls `generateRepoMap()`
- - Uses `code-chopper` to parse files and extract symbol definitions
- - Generates human-readable symbol documentation with file paths
- - Yields a single context item with the repository map
+
+- Includes only resources that are instances of `RepoMapResource`
+- Collects file paths via `addFilesToSet()` then calls `generateRepoMap()`
+- Uses `code-chopper` to parse files and extract symbol definitions
+- Generates human-readable symbol documentation with file paths
+- Yields a single context item with the repository map
 
 3. **Whole Files**: Complete file contents from enabled whole file resources
- - Includes only resources that are instances of `WholeFileResource`
- - Collects file paths via `addFilesToSet()` then reads each file
- - Reads full file contents via `FileSystemService.readTextFile()`
- - Yields one context item per file with complete contents
+
+- Includes only resources that are instances of `WholeFileResource`
+- Collects file paths via `addFilesToSet()` then reads each file
+- Reads full file contents via `FileSystemService.readTextFile()`
+- Yields one context item per file with complete contents
 
 **Example Context Items:**
 
@@ -781,9 +784,10 @@ The plugin's `install()` method performs these operations:
 2. Registers agent commands with `AgentCommandService`
 3. Creates `CodeBaseService` instance
 4. Registers configured resources by type:
- - `fileTree`: Creates `FileTreeResource`
- - `repoMap`: Creates `RepoMapResource`
- - `wholeFile`: Creates `WholeFileResource`
+
+- `fileTree`: Creates `FileTreeResource`
+- `repoMap`: Creates `RepoMapResource`
+- `wholeFile`: Creates `WholeFileResource`
 
 ### Registration Pattern
 
