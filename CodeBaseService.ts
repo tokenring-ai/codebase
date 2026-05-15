@@ -1,9 +1,9 @@
+import deepClone from "@tokenring-ai/utility/object/deepClone";
 import path from "node:path";
 import type { Agent } from "@tokenring-ai/agent";
 import type { TokenRingService } from "@tokenring-ai/app/types";
 import type { FileSystemService } from "@tokenring-ai/filesystem";
 import type FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
-import deepMerge from "@tokenring-ai/utility/object/deepMerge";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import { createParserFactory, type LanguageEnum, parseCodeAndChunk } from "code-chopper";
 import type { z } from "zod";
@@ -22,7 +22,7 @@ export default class CodeBaseService implements TokenRingService {
   constructor(readonly options: z.output<typeof CodeBaseServiceConfigSchema>) {}
 
   attach(agent: Agent): void {
-    const { enabledResources } = deepMerge(this.options.agentDefaults, agent.getAgentConfigSlice("codebase", CodeBaseAgentConfigSchema));
+    const { enabledResources } = deepClone(this.options.agentDefaults, agent.getAgentConfigSlice("codebase", CodeBaseAgentConfigSchema));
     // The enabled resources can include wildcards, so they need to be mapped to actual tool names with ensureItemNamesLike
     agent.initializeState(CodeBaseState, {
       enabledResources: enabledResources.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName)),
