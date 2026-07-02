@@ -9,7 +9,7 @@
     "@tokenring-ai/filesystem": "workspace:*",
     "@tokenring-ai/utility": "workspace:*",
     "code-chopper": "^0.1.8",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "exports": {
     ".": "./index.ts",
