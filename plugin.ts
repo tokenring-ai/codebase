@@ -29,8 +29,7 @@ export default {
     const codebaseService = new CodeBaseService(config.codebase);
     app.addServices(codebaseService);
 
-    for (const name in config.codebase.resources) {
-      const resourceConfig = config.codebase.resources[name];
+    for (const [name, resourceConfig] of Object.entries(config.codebase.resources)) {
       switch (resourceConfig.type) {
         case "fileTree":
           codebaseService.registerResource(name, new FileTreeResource(resourceConfig));

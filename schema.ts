@@ -3,23 +3,18 @@ import { z } from "zod";
 export const FileMatchSchema = z.object({
   path: z.string(),
   include: z.string().exactOptional(),
-  exclude: z.string().exactOptional()
+  exclude: z.string().exactOptional(),
 });
 
-export type ParsedFileMatch = z.output<typeof FileMatchSchema>
+export type ParsedFileMatch = z.output<typeof FileMatchSchema>;
 
 export const CodeBaseResourceSchema = z.object({
-  type: z.union([
-    z.literal('repoMap'),
-    z.literal('fileTree'),
-    z.literal('wholeFile'),
-  ]),
+  type: z.union([z.literal("repoMap"), z.literal("fileTree"), z.literal("wholeFile")]),
   description: z.string().optional(),
   items: z.array(FileMatchSchema),
 });
 
-export type ParsedCodeBaseResource = z.output<typeof CodeBaseResourceSchema>
-
+export type ParsedCodeBaseResource = z.output<typeof CodeBaseResourceSchema>;
 
 export const CodeBaseAgentConfigSchema = z
   .object({
