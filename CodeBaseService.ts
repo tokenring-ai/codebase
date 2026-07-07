@@ -5,7 +5,7 @@ import type { FileSystemService } from "@tokenring-ai/filesystem";
 import type FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
-import { createParserFactory, type LanguageEnum, parseCodeAndChunk } from "code-chopper";
+import { type BoundaryChunk, createParserFactory, type LanguageEnum, parseCodeAndChunk } from "code-chopper";
 import type { z } from "zod";
 import { CodeBaseAgentConfigSchema, type CodeBaseServiceConfigSchema } from "./schema.ts";
 import { CodeBaseState } from "./state/codeBaseState";
@@ -133,13 +133,13 @@ export default class CodeBaseService implements TokenRingService {
     }
   }
 
-  formatFileOutput(filePath: string, chunks: any[]) {
+  formatFileOutput(filePath: string, chunks: BoundaryChunk[]) {
     if (chunks.length === 0) return null;
 
     let output = `${filePath}:\n`;
 
     for (const chunk of chunks) {
-      const firstLine = chunk.content.split("\n")[0].trim();
+      const firstLine = chunk.content.split("\n")[0]?.trim();
       if (firstLine) {
         output += `- ${firstLine}\n`;
       }
