@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { Agent } from "@tokenring-ai/agent";
 import type { TokenRingService } from "@tokenring-ai/app/types";
 import type { FileSystemService } from "@tokenring-ai/filesystem";
@@ -5,7 +6,6 @@ import type FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import { createParserFactory, type LanguageEnum, parseCodeAndChunk } from "code-chopper";
-import path from "node:path";
 import type { z } from "zod";
 import { CodeBaseAgentConfigSchema, type CodeBaseServiceConfigSchema } from "./schema.ts";
 import { CodeBaseState } from "./state/codeBaseState";
