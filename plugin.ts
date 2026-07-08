@@ -32,13 +32,13 @@ export default {
     for (const [name, resourceConfig] of Object.entries(config.codebase.resources)) {
       switch (resourceConfig.type) {
         case "fileTree":
-          codebaseService.registerResource(name, new FileTreeResource(resourceConfig));
+          codebaseService.registerResource(name, new FileTreeResource(resourceConfig.items));
           break;
         case "repoMap":
-          codebaseService.registerResource(name, new RepoMapResource(resourceConfig));
+          codebaseService.registerResource(name, new RepoMapResource(resourceConfig.items));
           break;
         case "wholeFile":
-          codebaseService.registerResource(name, new WholeFileResource(resourceConfig));
+          codebaseService.registerResource(name, new WholeFileResource(resourceConfig.items));
           break;
       }
     }
