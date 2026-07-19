@@ -1,12 +1,15 @@
-import { FileMatchSchema } from "@tokenring-ai/filesystem/schema";
 import type { ConfigFieldMeta } from "@tokenring-ai/app/config/metadata";
+import { FileMatchSchema } from "@tokenring-ai/filesystem/schema";
 import { z } from "zod";
 
 export const CodeBaseResourceSchema = z.object({
   type: z.union([z.literal("repoMap"), z.literal("fileTree"), z.literal("wholeFile")]).meta({
     description: "How this resource is presented to the agent",
   } satisfies ConfigFieldMeta),
-  description: z.string().optional().meta({ description: "Human-readable description of this resource" } satisfies ConfigFieldMeta),
+  description: z
+    .string()
+    .optional()
+    .meta({ description: "Human-readable description of this resource" } satisfies ConfigFieldMeta),
   items: z.array(FileMatchSchema).meta({ description: "File match patterns included in this resource" } satisfies ConfigFieldMeta),
 });
 
