@@ -12,7 +12,7 @@ import { CodeBaseServiceConfigSchema } from "./schema.ts";
 import WholeFileResource from "./WholeFileResource.ts";
 
 const packageConfigSchema = z.object({
-  codebase: CodeBaseServiceConfigSchema.exactOptional(),
+  codebase: CodeBaseServiceConfigSchema,
 });
 
 export default {
@@ -21,7 +21,6 @@ export default {
   version: packageJSON.version,
   description: packageJSON.description,
   install(app, config) {
-    if (!config.codebase) return;
     app.waitForService(ChatService, chatService => {
       chatService.registerContextHandlers(contextHandlers);
     });

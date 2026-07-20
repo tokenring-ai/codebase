@@ -25,6 +25,7 @@ export const CodeBaseServiceConfigSchema = z
   .object({
     resources: z
       .record(z.string(), CodeBaseResourceSchema)
+      .default({})
       .meta({ label: "Resources", description: "Named codebase resources, keyed by name" } satisfies ConfigFieldMeta),
     agentDefaults: z
       .object({
@@ -36,4 +37,5 @@ export const CodeBaseServiceConfigSchema = z
       .default({ enabledResources: [] })
       .meta({ label: "Agent Defaults" } satisfies ConfigFieldMeta),
   })
+  .prefault({})
   .meta({ label: "Codebase", description: "Codebase indexing and context resources for agents" } satisfies ConfigFieldMeta);
