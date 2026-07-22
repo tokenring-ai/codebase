@@ -753,7 +753,6 @@ pkg/codebase/
 ├── plugin.ts                     # Plugin registration and installation
 ├── schema.ts                     # Configuration schemas
 ├── package.json                  # Package metadata
-├── vitest.config.ts             # Test configuration
 ├── LICENSE                       # License file
 └── README.md                     # This file
 ```
@@ -827,7 +826,7 @@ This package depends on:
 
 ### Dev Dependencies
 
-- `vitest` (^4.1.1) - Testing framework
+- `bun test` - Testing framework
 - `typescript` (^6.0.2) - TypeScript compiler
 
 ## Development
