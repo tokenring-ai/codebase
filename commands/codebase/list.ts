@@ -5,9 +5,9 @@ import CodeBaseService from "../../CodeBaseService.ts";
 const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
 function execute({ agent }: AgentCommandInputType<typeof inputSchema>): string {
-  const active = Array.from(agent.requireServiceByType(CodeBaseService).getEnabledResourceNames(agent));
-  if (active.length === 0) return "No codebase resources are currently enabled.";
-  return `Enabled codebase resources:\n${numberedList(active)}`;
+  const active = agent.requireServiceByType(CodeBaseService).getEnabledResourceNames(agent);
+  if (active.empty()) return "No codebase resources are currently enabled.";
+  return `Enabled codebase resources:\n${numberedList(active.valuesArray())}`;
 }
 
 export default {

@@ -8,7 +8,7 @@ function execute({ agent }: AgentCommandInputType<typeof inputSchema>): string {
     state.reset();
     return state.enabledResources;
   });
-  return `Currently enabled codebase resources: ${Array.from(enabled).join(", ")}`;
+  return `Currently enabled codebase resources: ${enabled.join(", ")}`;
 }
 
 export default {

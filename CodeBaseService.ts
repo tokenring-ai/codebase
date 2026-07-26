@@ -5,6 +5,7 @@ import type { FileSystemService } from "@tokenring-ai/filesystem";
 import type FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
+import EnhancedSet from "@tokenring-ai/utility/set/enhancedSet";
 import { type BoundaryChunk, createParserFactory, type LanguageEnum, parseCodeAndChunk } from "code-chopper";
 import type { z } from "zod";
 import { CodeBaseAgentConfigSchema, type CodeBaseServiceConfigSchema } from "./schema.ts";
@@ -29,46 +30,42 @@ export default class CodeBaseService implements TokenRingService {
     });
   }
 
-  getEnabledResourceNames(agent: Agent): Set<string> {
+  getEnabledResourceNames(agent: Agent): EnhancedSet<string> {
     return agent.getState(CodeBaseState).enabledResources;
   }
 
   getEnabledResources(agent: Agent): FileMatchResource[] {
-    return Array.from(agent.getState(CodeBaseState).enabledResources).map(r => this.resourceRegistry.require(r));
+    return agent.getState(CodeBaseState).enabledResources.map(r => this.resourceRegistry.require(r));
   }
 
-  setEnabledResources(resourceNames: string[], agent: Agent): Set<string> {
+  setEnabledResources(resourceNames: string[], agent: Agent): EnhancedSet<string> {
     const matchedResourceNames = resourceNames.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName));
 
     return agent.mutateState(CodeBaseState, state => {
-      state.enabledResources = new Set(matchedResourceNames);
+      state.enabledResources = new EnhancedSet(matchedResourceNames);
       return state.enabledResources;
     });
   }
 
-  enableResources(resourceNames: string[], agent: Agent): Set<string> {
+  enableResources(resourceNames: string[], agent: Agent): EnhancedSet<string> {
     const matchedResourceNames = resourceNames.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName));
 
     return agent.mutateState(CodeBaseState, state => {
-      for (const resourceName of matchedResourceNames) {
-        state.enabledResources.add(resourceName);
-      }
+      state.enabledResources.insertAll(matchedResourceNames);
       return state.enabledResources;
     });
   }
 
-  disableResources(resourceNames: string[], agent: Agent): Set<string> {
+  disableResources(resourceNames: string[], agent: Agent): EnhancedSet<string> {
     const matchedResourceNames = resourceNames.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName));
 
     return agent.mutateState(CodeBaseState, state => {
-      for (const resourceName of matchedResourceNames) {
-        state.enabledResources.delete(resourceName);
-      }
+      state.enabledResources.deleteAll(matchedResourceNames);
       return state.enabledResources;
     });
   }
 
-  async generateRepoMap(files: Set<string>, fileSystem: FileSystemService, agent: Agent): Promise<string | null> {
+  async generateRepoMap(files: Iterable<string>, fileSystem: FileSystemService, agent: Agent): Promise<string | null> {
     const factory = createParserFactory();
     const repoMap: string[] = [];
 

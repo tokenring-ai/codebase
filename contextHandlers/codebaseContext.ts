@@ -1,5 +1,6 @@
 import type { ContextHandlerOptions, ContextItem } from "@tokenring-ai/chat/schema";
 import { FileSystemService } from "@tokenring-ai/filesystem";
+import EnhancedSet from "@tokenring-ai/utility/set/enhancedSet";
 import CodeBaseService from "../CodeBaseService.ts";
 import RepoMapResource from "../RepoMapResource.ts";
 import WholeFileResource from "../WholeFileResource.ts";
@@ -11,7 +12,7 @@ export default async function* getContextItems({ agent }: ContextHandlerOptions)
 
   // File tree
   {
-    const fileTreeFiles = new Set<string>();
+    const fileTreeFiles = new EnhancedSet<string>();
     for (const resource of resources) {
       if (!(resource instanceof WholeFileResource) && !(resource instanceof RepoMapResource)) {
         await resource.addFilesToSet(fileTreeFiles, agent);
@@ -21,7 +22,7 @@ export default async function* getContextItems({ agent }: ContextHandlerOptions)
     if (fileTreeFiles.size > 0) {
       yield {
         role: "user",
-        content: `// Directory Tree of project files:\n${Array.from(fileTreeFiles).sort().join("\n")}`,
+        content: `// Directory Tree of project files:\n${fileTreeFiles.sortedValues().join("\n")}`,
       };
     }
   }

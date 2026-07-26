@@ -14,7 +14,7 @@ async function execute({ agent }: AgentCommandInputType<typeof inputSchema>): Pr
       type: "treeSelect",
       label: "Codebase Resource Selection",
       key: "result",
-      defaultValue: Array.from(codebaseService.getEnabledResourceNames(agent)),
+      defaultValue: codebaseService.getEnabledResourceNames(agent).valuesArray(),
       minimumSelections: 0,
       tree: buildResourceTree(sortedResources),
     },
@@ -22,7 +22,7 @@ async function execute({ agent }: AgentCommandInputType<typeof inputSchema>): Pr
 
   if (selection) {
     const enabled = codebaseService.setEnabledResources(selection, agent);
-    return `Currently enabled codebase resources: ${Array.from(enabled).join(", ")}`;
+    return `Currently enabled codebase resources: ${enabled.join(", ")}`;
   }
   return "Resource selection cancelled.";
 }
