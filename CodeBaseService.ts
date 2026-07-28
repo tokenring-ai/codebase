@@ -3,13 +3,16 @@ import type { Agent } from "@tokenring-ai/agent";
 import type { TokenRingService } from "@tokenring-ai/app/types";
 import type { FileSystemService } from "@tokenring-ai/filesystem";
 import type FileMatchResource from "@tokenring-ai/filesystem/FileMatchResource";
+import { deepEqual } from "@tokenring-ai/one-frontend/src/lib/utils";
 import deepClone from "@tokenring-ai/utility/object/deepClone";
 import KeyedRegistry from "@tokenring-ai/utility/registry/KeyedRegistry";
 import EnhancedSet from "@tokenring-ai/utility/set/enhancedSet";
 import { type BoundaryChunk, createParserFactory, type LanguageEnum, parseCodeAndChunk } from "code-chopper";
-import type { z } from "zod";
-import { CodeBaseAgentConfigSchema, type CodeBaseServiceConfigSchema } from "./schema.ts";
+import FileTreeResource from "./FileTreeResource.ts";
+import RepoMapResource from "./RepoMapResource.ts";
+import { CodeBaseAgentConfigSchema, CodeBaseServiceConfigSchema, type ParsedCodeBaseResource, type ParsedCodeBaseServiceConfig } from "./schema.ts";
 import { CodeBaseState } from "./state/codeBaseState";
+import WholeFileResource from "./WholeFileResource.ts";
 
 export default class CodeBaseService implements TokenRingService {
   readonly name = "CodeBaseService";
@@ -20,10 +23,33 @@ export default class CodeBaseService implements TokenRingService {
   registerResource = this.resourceRegistry.set;
   getAvailableResources = this.resourceRegistry.keysArray;
 
-  constructor(readonly options: z.output<typeof CodeBaseServiceConfigSchema>) {}
+  private config = CodeBaseServiceConfigSchema.parse({});
+
+  reconfigure(newConfig: ParsedCodeBaseServiceConfig): void {
+    this.resourceRegistry.reconcileAgainst(newConfig.resources, {
+      creating: (_name, resourceConfig) => this.createResource(resourceConfig),
+      deleting: () => {},
+      updating: (name, resource, resourceConfig) => {
+        if (deepEqual(this.config.resources[name], resourceConfig)) return resource;
+        return this.createResource(resourceConfig);
+      },
+    });
+    this.config = newConfig;
+  }
+
+  private createResource(resourceConfig: ParsedCodeBaseResource): FileMatchResource {
+    switch (resourceConfig.type) {
+      case "fileTree":
+        return new FileTreeResource(resourceConfig.items);
+      case "repoMap":
+        return new RepoMapResource(resourceConfig.items);
+      case "wholeFile":
+        return new WholeFileResource(resourceConfig.items);
+    }
+  }
 
   attach(agent: Agent): void {
-    const { enabledResources } = deepClone(this.options.agentDefaults, agent.getAgentConfigSlice("codebase", CodeBaseAgentConfigSchema));
+    const { enabledResources } = deepClone(this.config.agentDefaults, agent.getAgentConfigSlice("codebase", CodeBaseAgentConfigSchema));
     // The enabled resources can include wildcards, so they need to be mapped to actual tool names with ensureItemNamesLike
     agent.initializeState(CodeBaseState, {
       enabledResources: enabledResources.flatMap(resourceName => this.resourceRegistry.requireKeysLike(resourceName)),

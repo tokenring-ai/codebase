@@ -39,3 +39,6 @@ export const CodeBaseServiceConfigSchema = z
   })
   .prefault({})
   .meta({ label: "Codebase", description: "Codebase indexing and context resources for agents" } satisfies ConfigFieldMeta);
+
+export type CodeBaseServiceConfig = z.input<typeof CodeBaseServiceConfigSchema>;
+export type ParsedCodeBaseServiceConfig = z.output<typeof CodeBaseServiceConfigSchema>;
