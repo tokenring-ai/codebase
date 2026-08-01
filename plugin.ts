@@ -22,7 +22,7 @@ export default {
       chatService.registerContextHandlers(contextHandlers);
     });
     app.waitForService(AgentCommandService, agentCommandService => agentCommandService.addAgentCommands(agentCommands));
-    app.addServices(new CodeBaseService());
+    app.addService(new CodeBaseService());
   },
   reconfigure(app, config) {
     app.requireService(CodeBaseService).reconfigure(config.codebase);

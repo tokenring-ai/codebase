@@ -5,7 +5,7 @@ import { buildResourceTree } from "./buildResourceTree.ts";
 const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
 async function execute({ agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
-  const codebaseService = agent.requireServiceByType(CodeBaseService);
+  const codebaseService = agent.requireService(CodeBaseService);
   const sortedResources = codebaseService.getAvailableResources().sort((a, b) => a.localeCompare(b));
 
   const selection = await agent.askQuestion({

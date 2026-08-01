@@ -6,8 +6,8 @@ import RepoMapResource from "../RepoMapResource.ts";
 import WholeFileResource from "../WholeFileResource.ts";
 
 export default async function* getContextItems({ agent }: ContextHandlerOptions): AsyncGenerator<ContextItem> {
-  const codebaseService = agent.requireServiceByType(CodeBaseService);
-  const fileSystem = agent.requireServiceByType(FileSystemService);
+  const codebaseService = agent.requireService(CodeBaseService);
+  const fileSystem = agent.requireService(FileSystemService);
   const resources = codebaseService.getEnabledResources(agent);
 
   // File tree

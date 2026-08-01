@@ -6,7 +6,7 @@ import RepoMapResource from "../../RepoMapResource.ts";
 const inputSchema = {} as const satisfies AgentCommandInputSchema;
 
 async function execute({ agent }: AgentCommandInputType<typeof inputSchema>): Promise<string> {
-  const codebaseService = agent.requireServiceByType(CodeBaseService);
+  const codebaseService = agent.requireService(CodeBaseService);
   const repoMaps = Object.values(codebaseService.getEnabledResources(agent)).filter(r => r instanceof RepoMapResource);
 
   if (repoMaps.length === 0) return "No RepoMap resources are currently enabled. Enable a RepoMap resource first.";
@@ -17,7 +17,7 @@ async function execute({ agent }: AgentCommandInputType<typeof inputSchema>): Pr
   }
 
   if (repoMapFiles.size > 0) {
-    const repoMap = await codebaseService.generateRepoMap(repoMapFiles, agent.requireServiceByType(FileSystemService), agent);
+    const repoMap = await codebaseService.generateRepoMap(repoMapFiles, agent.requireService(FileSystemService), agent);
     if (repoMap) return `Repository map:\n${repoMap}`;
   }
 

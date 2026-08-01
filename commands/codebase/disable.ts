@@ -12,7 +12,7 @@ const inputSchema = {
 
 function execute({ remainder, agent }: AgentCommandInputType<typeof inputSchema>): string {
   const resourceList = remainder.split(/\s+/);
-  const enabled = agent.requireServiceByType(CodeBaseService).disableResources(resourceList, agent);
+  const enabled = agent.requireService(CodeBaseService).disableResources(resourceList, agent);
   return `Currently enabled codebase resources: ${enabled.join(", ")}`;
 }
 
